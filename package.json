@@ -1,0 +1,74 @@
+{
+  "name": "@webpod/ip",
+  "version": "0.0.0",
+  "description": "Lite IP tools",
+  "type": "module",
+  "main": "target/cjs/ip.cjs",
+  "exports": {
+    ".": {
+      "types": "./target/dts/ip.d.ts",
+      "require": "./target/cjs/ip.cjs",
+      "import": "./target/esm/ip.mjs",
+      "default": "./target/esm/ip.mjs"
+    }
+  },
+  "module": "target/esm/ip.mjs",
+  "types": "target/dts/ip.d.ts",
+  "files": [
+    "target/cjs",
+    "target/esm",
+    "target/dts"
+  ],
+  "scripts": {
+    "build": "concurrently 'npm:build:*'",
+    "_build:js": "node ./src/scripts/build.mjs --entry='./src/main/ts/ip.ts'",
+    "_build:dts": "tsc --emitDeclarationOnly --outDir target/dts",
+    "_build:docs": "typedoc --options src/main/typedoc",
+    "_build:stamp": "npx buildstamp",
+    "_build:jsr": "node ./src/scripts/build-jsr.mjs",
+    "test": "concurrently 'npm:test:*'",
+    "test:target": "git diff --exit-code --quiet || (echo 'Uncommitted changes' && exit 1)",
+    "_test:lint": "eslint -c src/test/lint/.eslintrc.json src",
+    "test:unit": "c8 -r lcov -r text -o target/coverage -x src/scripts -x src/test -x target node --experimental-specifier-resolution=node src/test/ts/ip.test.ts",
+    "_test:smoke:esm": "node ./src/test/smoke/invoke.test.mjs",
+    "_test:smoke:cjs": "node src/test/smoke/invoke.test.cjs",
+    "_test:jsr": "jsr publish --dry-run",
+    "test:audit": "npm audit",
+    "_publish:draft": "npm run build && npm publish --no-git-tag-version",
+    "_postrelease": "node src/scripts/build-jsr.mjs && jsr publish --allow-dirty"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.1",
+    "c8": "^10.1.3",
+    "concurrently": "^9.2.1",
+    "esbuild": "^0.25.9",
+    "esbuild-node-externals": "^1.18.0",
+    "esbuild-plugin-entry-chunks": "^0.1.17",
+    "esbuild-plugin-extract-helpers": "^0.0.6",
+    "esbuild-plugin-transform-hook": "^0.2.0",
+    "esbuild-plugin-utils": "^0.1.0",
+    "fast-glob": "^3.3.3",
+    "jsr": "^0.13.5",
+    "minimist": "^1.2.8",
+    "typedoc": "^0.28.12",
+    "typescript": "^5.9.2"
+  },
+  "keywords": [
+    "ip",
+    "ip-address",
+    "cidr",
+    "subnet",
+    "ipv4",
+    "ipv6"
+  ],
+  "homepage": "https://github.com/webpod/ip#readme",
+  "bugs": {
+    "url": "https://github.com/webpod/ip/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/webpod/ip.git"
+  },
+  "license": "MIT",
+  "author": "Anton Golub <antongolub@antongolub.com>"
+}
