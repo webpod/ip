@@ -43,4 +43,11 @@ export const FakeBuffer = {
   }
 }
 
-export const Buffer = (global as any || globalThis).Buffer || FakeBuffer
+const getGlobal = function() {
+  if (typeof globalThis !== 'undefined') return globalThis
+  if (typeof window !== 'undefined') return window
+  if (typeof global !== 'undefined') return global
+  return Function('return this')()
+}
+
+export const Buffer = getGlobal().Buffer || FakeBuffer

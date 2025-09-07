@@ -74,7 +74,13 @@ var FakeBuffer = {
     });
   }
 };
-var Buffer2 = (global || globalThis).Buffer || FakeBuffer;
+var getGlobal = function() {
+  if (typeof globalThis !== "undefined") return globalThis;
+  if (typeof window !== "undefined") return window;
+  if (typeof global !== "undefined") return global;
+  return Function("return this")();
+};
+var Buffer2 = getGlobal().Buffer || FakeBuffer;
 
 // src/main/ts/core.ts
 var IPV4 = "IPv4";

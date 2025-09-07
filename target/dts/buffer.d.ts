@@ -6,4 +6,4 @@ export interface BufferLike extends Omit<Uint8Array, 'slice'> {
 export declare const FakeBuffer: {
     alloc: (size: number, fill?: number) => BufferLike;
 };
-export declare const Buffer: BufferConstructor;
+export declare const Buffer: any;
