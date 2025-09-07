@@ -2,6 +2,13 @@
 # If the tests pass and this is a push to the master branch it also runs Semantic Release.
 name: CI
 on: [push, pull_request]
+
+env:
+  npm_config_audit: false
+  npm_config_fund: false
+  npm_config_save: false
+  npm_config_package_lock: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -122,7 +129,7 @@ jobs:
           name: build
       - run: |
           npm ci
-          npx playwright install --with-deps
+          npx playwright install --with-deps chromium
           npm run smoke:browser
   
 
