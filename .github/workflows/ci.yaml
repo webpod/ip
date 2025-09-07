@@ -1,0 +1,141 @@
+# This is a Github Workflow that runs tests on any push or pull request.
+# If the tests pass and this is a push to the master branch it also runs Semantic Release.
+name: CI
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: |
+            target
+            package.json
+            jsr.json
+          retention-days: 1
+
+  push:
+    name: Push ${{ github.ref }}
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      checks: read
+      statuses: write
+      contents: write
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: ${{ github.ref == 'refs/heads/main' && '0' || '1' }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+      - name: Fetch deps
+        run: npm ci
+      - name: Run tests
+        run: npm run test
+
+#      - name: Semantic Release (npm)
+#        if: github.ref == 'refs/heads/main'
+#        env:
+#          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+#          NPM_PROVENANCE: true
+#          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          GIT_BRANCH: 'main'
+#          GIT_AUTHOR_NAME: ${{ vars.GIT_AUTHOR_NAME }}
+#          GIT_AUTHOR_EMAIL: ${{ vars.GIT_AUTHOR_EMAIL }}
+#          GIT_COMMITTER_NAME: ${{ vars.GIT_COMMITTER_NAME }}
+#          GIT_COMMITTER_EMAIL: ${{ vars.GIT_COMMITTER_EMAIL }}
+#        run: npx zx-semrel
+
+  pr:
+    if: github.event_name == 'pull_request'
+    needs: build
+    name: PR (Node v${{ matrix.node-version }}, OS ${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+        node-version: [ 18, 24 ]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+
+      - name: Run all tests
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == 24
+        run: |
+          npm ci
+          npm run test
+#      - name: Run spawn tests (win32)
+#        if: matrix.os == 'windows-latest' && matrix.node-version == 24
+#        run: |
+#          npm ci
+#          node --loader ts-node/esm --experimental-specifier-resolution=node ./src/test/ts/spawn.test.ts
+#        timeout-minutes: 5
+#
+#      - name: Run smoke:esm tests
+#        if: matrix.node-version >= 12
+#        run: npm run test:smoke:esm
+#
+#      - name: Run smoke:cjs tests
+#        run: npm run test:smoke:cjs
+
+#  smoke-bun:
+#    runs-on: ubuntu-latest
+#    name: Smoke Bun
+#    needs: build
+#    steps:
+#      - uses: actions/checkout@v4
+#      - name: Setup Bun
+#        uses: antongolub/action-setup-bun@v1
+#      - uses: actions/download-artifact@v4
+#        with:
+#          name: build
+#      - run: |
+#          bun ./src/test/smoke/invoke.test.cjs
+#          bun ./src/test/smoke/invoke.test.mjs
+#
+#  smoke-deno:
+#    runs-on: ubuntu-latest
+#    name: Smoke Deno ${{ matrix.deno-version }}
+#    needs: build
+#    strategy:
+#      matrix:
+#        deno-version: [ v1.x, v2.x ]
+#    steps:
+#      - uses: actions/checkout@v4
+#      - name: Setup Deno
+#        uses: denoland/setup-deno@v2
+#        with:
+#          deno-version: ${{ matrix.deno-version }}
+#      - run: deno install npm:types/node
+#      - uses: actions/download-artifact@v4
+#        with:
+#          name: build
+#      - run: deno test --allow-read --allow-sys --allow-env --allow-run ./src/test/smoke/invoke.test.mjs
