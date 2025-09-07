@@ -1,3 +1,42 @@
+// src/main/ts/buffer.ts
+var FakeBuffer = {
+  alloc: (size, fill = 0) => {
+    if (size < 0)
+      throw new RangeError('The value of "size" is out of range.');
+    const arr = new Uint8Array(size);
+    if (fill !== 0)
+      arr.fill(fill);
+    const buf = arr;
+    return Object.assign(buf, {
+      readUInt16BE(offset = 0) {
+        if (offset < 0 || offset + 2 > this.length)
+          throw new RangeError(`RangeError: The value of "offset" is out of range. It must be >= 0 and <= 2. Received ${offset}`);
+        return this[offset] << 8 | this[offset + 1];
+      },
+      slice(start, end) {
+        const sliced = Uint8Array.prototype.slice.call(this, start, end);
+        return Object.assign(sliced, {
+          readUInt16BE: buf.readUInt16BE,
+          slice: buf.slice,
+          toString: buf.toString
+        });
+      },
+      toString(encoding) {
+        if (encoding !== "hex")
+          throw new Error("Only 'hex' encoding is supported in this polyfill");
+        return Array.from(this).map((b) => b.toString(16).padStart(2, "0")).join("");
+      }
+    });
+  }
+};
+var getGlobal = function() {
+  if (typeof globalThis !== "undefined") return globalThis;
+  if (typeof window !== "undefined") return window;
+  if (typeof global !== "undefined") return global;
+  return Function("return this")();
+};
+var Buffer = getGlobal().Buffer || FakeBuffer;
+
 // src/main/ts/core.ts
 var IPV4 = "IPv4";
 var IPV6 = "IPv6";
@@ -24,13 +63,6 @@ var setMode = (mode) => {
   }
   throw new Error('mode must be either "legacy" or "strict"');
 };
-function readUInt16BE(buf, offset = 0) {
-  if (typeof buf.readUInt16BE === "function") {
-    return buf.readUInt16BE(offset);
-  }
-  const view = buf instanceof DataView ? buf : new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
-  return view.getUint16(offset, false);
-}
 function normalizeFamily(family) {
   const f = `${family}`.toLowerCase().trim();
   return f === "6" || f === IPV6.toLowerCase() ? IPV6 : IPV4;
@@ -102,7 +134,7 @@ var toString = (buff, offset = 0, length) => {
   if (l === 4)
     return [...buff.subarray(o, o + l)].join(".");
   if (l === 16)
-    return Array.from({ length: l / 2 }, (_, i) => readUInt16BE(buff, o + i * 2).toString(16)).join(":").replace(/(^|:)0(:0)*:0(:|$)/, "$1::$3").replace(/:{3,4}/, "::");
+    return Array.from({ length: l / 2 }, (_, i) => buff.readUInt16BE(o + i * 2).toString(16)).join(":").replace(/(^|:)0(:0)*:0(:|$)/, "$1::$3").replace(/:{3,4}/, "::");
   throw new Error("Invalid buffer length for IP address");
 };
 var toBuffer = (ip, buff, offset = 0) => {
@@ -234,7 +266,7 @@ var isEqual = (a, b) => {
   }
   if (bb.length === 4) [ab, bb] = [bb, ab];
   for (let i = 0; i < 10; i++) if (bb[i] !== 0) return false;
-  const prefix = readUInt16BE(bb, 10);
+  const prefix = bb.readUInt16BE(10);
   if (prefix !== 0 && prefix !== 65535) return false;
   for (let i = 0; i < 4; i++) if (ab[i] !== bb[i + 12]) return false;
   return true;
@@ -251,6 +283,45 @@ var isPrivate = (addr) => {
   addr === "::";
 };
 var isPublic = (addr) => !isPrivate(addr);
+var SPECIALS = [
+  "0.0.0.0/8",
+  "10.0.0.0/8",
+  "100.64.0.0/10",
+  "127.0.0.0/8",
+  "169.254.0.0/16",
+  "172.16.0.0/12",
+  "192.0.0.0/24",
+  "192.0.2.0/24",
+  "192.88.99.0/24",
+  "192.168.0.0/16",
+  "198.18.0.0/15",
+  "198.51.100.0/24",
+  "203.0.113.0/24",
+  "224.0.0.0/4",
+  "233.252.0.0/24",
+  "240.0.0.0/4",
+  "255.255.255.255/32"
+  // TODO
+  // '::/128',
+  // '::1/128',
+  // '::ffff:0:0/96',
+  // '64:ff9b::/96',
+  // '64:ff9b:1::/48',
+  // '100::/64',
+  // '2001::/32',
+  // '2001:20::/28',
+  // '2001:db8::/32',
+  // '2002::/16',
+  // '3fff::/20',
+  // '5f00::/16',
+  // 'fc00::/7',
+  // 'fe80::/64',
+  // 'ff00::/8',
+].map(cidrSubnet);
+var isSpecial = (addr) => {
+  const a = normalizeAddress(addr);
+  return SPECIALS.some((sn) => sn.contains(addr));
+};
 export {
   IPV4,
   IPV6,
@@ -266,6 +337,7 @@ export {
   isLoopback,
   isPrivate,
   isPublic,
+  isSpecial,
   isV4,
   isV4Format,
   isV6,
@@ -277,7 +349,6 @@ export {
   normalizeToLong,
   not,
   or,
-  readUInt16BE,
   setMode,
   subnet,
   toBuffer,

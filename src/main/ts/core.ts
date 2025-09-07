@@ -1,3 +1,5 @@
+import { Buffer, type BufferLike } from './buffer.ts'
+
 export const IPV4 = 'IPv4'
 export const IPV6 = 'IPv6'
 
@@ -23,19 +25,6 @@ export const setMode = (mode: 'legacy' | 'strict'): void => {
   if (mode === 'strict') { Object.assign(defs, { V4_RE: V4_S_RE, V6_RE: V6_S_RE }); return }
 
   throw new Error('mode must be either "legacy" or "strict"')
-}
-
-export function readUInt16BE(buf: Buffer | Uint8Array | DataView, offset: number = 0): number {
-  if (typeof (buf as Buffer).readUInt16BE === 'function') {
-    // Node.js Buffer or feross/buffer polyfill
-    return (buf as Buffer).readUInt16BE(offset)
-  }
-
-  const view = buf instanceof DataView
-    ? buf
-    : new DataView(buf.buffer, buf.byteOffset, buf.byteLength)
-
-  return view.getUint16(offset, false)
 }
 
 // Corresponds Nodejs.NetworkInterfaceBase
@@ -137,7 +126,7 @@ export const fromLong = (n: number): string => {
 export const toLong = (ip: string): number =>
   ip.split('.').reduce((acc, octet) => (acc << 8) + Number(octet), 0) >>> 0
 
-export const toString = (buff: Buffer, offset = 0, length?: number): string => {
+export const toString = (buff: BufferLike, offset = 0, length?: number): string => {
   const o = ~~offset
   const l = length || (buff.length - offset)
 
@@ -148,7 +137,7 @@ export const toString = (buff: Buffer, offset = 0, length?: number): string => {
   // IPv6
   if (l === 16)
     return Array
-      .from({ length: l / 2 }, (_, i) => readUInt16BE(buff, o + i * 2).toString(16))
+      .from({ length: l / 2 }, (_, i) => buff.readUInt16BE(o + i * 2).toString(16))
       .join(':')
       .replace(/(^|:)0(:0)*:0(:|$)/, '$1::$3')
       .replace(/:{3,4}/, '::')
@@ -156,7 +145,7 @@ export const toString = (buff: Buffer, offset = 0, length?: number): string => {
   throw new Error('Invalid buffer length for IP address')
 }
 
-export const toBuffer = (ip: string, buff?: Buffer, offset = 0): Buffer => {
+export const toBuffer = (ip: string, buff?: BufferLike, offset = 0): BufferLike => {
   offset = ~~offset
 
   if (isV4Format(ip)) {
@@ -345,7 +334,7 @@ export const isEqual = (a: string, b: string): boolean => {
   for (let i = 0; i < 10; i++) if (bb[i] !== 0) return false
 
   // next 2 bytes must be either 0x0000 or 0xffff (::ffff:ipv4)
-  const prefix = readUInt16BE(bb, 10)
+  const prefix = bb.readUInt16BE(10)
   if (prefix !== 0 && prefix !== 0xffff) return false
 
   // last 4 bytes must match IPv4 buffer
@@ -357,7 +346,7 @@ export const isEqual = (a: string, b: string): boolean => {
 export const isPrivate = (addr: string): boolean => {
   if (isLoopback(addr)) return true
 
-  // private ranges
+  // legacy private ranges
   return (
     /^(::f{4}:)?10\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/i.test(addr) ||  // 10.0.0.0/8
     /^(::f{4}:)?192\.168\.(\d{1,3})\.(\d{1,3})$/i.test(addr) ||       // 192.168.0.0/16
@@ -371,3 +360,49 @@ export const isPrivate = (addr: string): boolean => {
 }
 
 export const isPublic = (addr: string): boolean => !isPrivate(addr)
+
+const SPECIALS = [
+  '0.0.0.0/8',
+  '10.0.0.0/8',
+  '100.64.0.0/10',
+  '127.0.0.0/8',
+  '169.254.0.0/16',
+  '172.16.0.0/12',
+  '192.0.0.0/24',
+  '192.0.2.0/24',
+  '192.88.99.0/24',
+  '192.168.0.0/16',
+  '198.18.0.0/15',
+  '198.51.100.0/24',
+  '203.0.113.0/24',
+  '224.0.0.0/4',
+  '233.252.0.0/24',
+  '240.0.0.0/4',
+  '255.255.255.255/32',
+
+  // TODO
+  // '::/128',
+  // '::1/128',
+  // '::ffff:0:0/96',
+  // '64:ff9b::/96',
+  // '64:ff9b:1::/48',
+  // '100::/64',
+  // '2001::/32',
+  // '2001:20::/28',
+  // '2001:db8::/32',
+  // '2002::/16',
+  // '3fff::/20',
+  // '5f00::/16',
+  // 'fc00::/7',
+  // 'fe80::/64',
+  // 'ff00::/8',
+].map(cidrSubnet)
+
+export const isSpecial = (addr: string): boolean => {
+  const a = normalizeAddress(addr)
+
+  // if (isLoopback(a)) return true
+
+  // https://en.wikipedia.org/wiki/Reserved_IP_addresses
+  return SPECIALS.some(sn => sn.contains(addr))
+}

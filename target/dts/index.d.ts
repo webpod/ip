@@ -2,7 +2,6 @@ import * as core from './core.ts';
 export * from './address.ts';
 export * from './core.ts';
 export declare const ip: {
-    readUInt16BE(buf: Buffer | Uint8Array | DataView, offset?: number): number;
     normalizeFamily(family?: string | number): core.Family;
     IPV4: "IPv4";
     IPV6: "IPv6";
@@ -21,8 +20,8 @@ export declare const ip: {
     loopback: (family?: string | number) => "127.0.0.1" | "fe80::1";
     fromLong: (n: number) => string;
     toLong: (ip: string) => number;
-    toString: (buff: Buffer, offset?: number, length?: number) => string;
-    toBuffer: (ip: string, buff?: Buffer, offset?: number) => Buffer;
+    toString: (buff: import("./buffer.ts").BufferLike, offset?: number, length?: number) => string;
+    toBuffer: (ip: string, buff?: import("./buffer.ts").BufferLike, offset?: number) => import("./buffer.ts").BufferLike;
     fromPrefixLen: (prefixlen: number, family?: string | number) => string;
     mask: (addr: string, maskStr: string) => string;
     subnet: (addr: string, smask: string) => {
@@ -53,6 +52,7 @@ export declare const ip: {
     isEqual: (a: string, b: string) => boolean;
     isPrivate: (addr: string) => boolean;
     isPublic: (addr: string) => boolean;
+    isSpecial: (addr: string) => boolean;
     addresses: (name?: string, family?: string) => string[];
     address: (name?: string, family?: string) => string | undefined;
 };
