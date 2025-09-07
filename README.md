@@ -97,6 +97,10 @@ Additional features:
 ```ts
 ip.isV4Format('255.255.255.256')   // true
 ip.isV4('255.255.255.256')         // false
+
+ip.setMode('strict')               // or 'legacy'
+ip.isV4Format('255.255.255.256')   // false
+ip.isV4('255.255.255.256')         // false
 ```
 
 ## License

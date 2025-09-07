@@ -14,6 +14,7 @@ export declare const ip: {
     isV6Format: (ip: string) => boolean;
     isV4: (ip: string) => boolean;
     isV6: (ip: string) => boolean;
+    setMode: (mode: "legacy" | "strict") => void;
     normalizeAddress: (addr: string | number) => string;
     normalizeToLong: (addr: string) => number;
     isLoopback: (addr: string | number) => boolean;

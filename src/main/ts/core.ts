@@ -8,10 +8,22 @@ export const V6_RE = /^(?=.+)(::)?(((\d{1,3}\.){3}\d{1,3})?|([0-9a-f]{0,4}:{0,2}
 export const V4_S_RE = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/
 export const V6_S_RE = /(([\dA-Fa-f]{1,4}:){7}[\dA-Fa-f]{1,4}|([\dA-Fa-f]{1,4}:){1,7}:|([\dA-Fa-f]{1,4}:){1,6}:[\dA-Fa-f]{1,4}|([\dA-Fa-f]{1,4}:){1,5}(:[\dA-Fa-f]{1,4}){1,2}|([\dA-Fa-f]{1,4}:){1,4}(:[\dA-Fa-f]{1,4}){1,3}|([\dA-Fa-f]{1,4}:){1,3}(:[\dA-Fa-f]{1,4}){1,4}|([\dA-Fa-f]{1,4}:){1,2}(:[\dA-Fa-f]{1,4}){1,5}|[\dA-Fa-f]{1,4}:((:[\dA-Fa-f]{1,4}){1,6})|:((:[\dA-Fa-f]{1,4}){1,7}|:)|fe80:(:[\dA-Fa-f]{0,4}){0,4}%[\dA-Za-z]+|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}\d){0,1}\d)\.){3}(25[0-5]|(2[0-4]|1{0,1}\d){0,1}\d)|([\dA-Fa-f]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}\d){0,1}\d)\.){3}(25[0-5]|(2[0-4]|1{0,1}\d){0,1}\d))$/
 
-export const isV4Format = (ip: string): boolean => V4_RE.test(ip) // Legacy
-export const isV6Format = (ip: string): boolean => V6_RE.test(ip) // Legacy
+export const isV4Format = (ip: string): boolean => defs.V4_RE.test(ip) // Legacy
+export const isV6Format = (ip: string): boolean => defs.V6_RE.test(ip) // Legacy
 export const isV4 = (ip: string): boolean => V4_S_RE.test(ip)
 export const isV6 = (ip: string): boolean => V6_S_RE.test(ip)
+
+const defs = {
+  V4_RE,
+  V6_RE,
+}
+
+export const setMode = (mode: 'legacy' | 'strict'): void => {
+  if (mode === 'legacy') { Object.assign(defs, { V4_RE, V6_RE }); return }
+  if (mode === 'strict') { Object.assign(defs, { V4_RE: V4_S_RE, V6_RE: V6_S_RE }); return }
+
+  throw new Error('mode must be either "legacy" or "strict"')
+}
 
 export function readUInt16BE(buf: Buffer | Uint8Array | DataView, offset: number = 0): number {
   if (typeof (buf as Buffer).readUInt16BE === 'function') {

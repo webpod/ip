@@ -8,6 +8,7 @@ export declare const isV4Format: (ip: string) => boolean;
 export declare const isV6Format: (ip: string) => boolean;
 export declare const isV4: (ip: string) => boolean;
 export declare const isV6: (ip: string) => boolean;
+export declare const setMode: (mode: "legacy" | "strict") => void;
 export declare function readUInt16BE(buf: Buffer | Uint8Array | DataView, offset?: number): number;
 export type Family = typeof IPV4 | typeof IPV6;
 export declare function normalizeFamily(family?: string | number): Family;

@@ -5,10 +5,25 @@ var V4_RE = /^(\d{1,3}(\.|$)){4}$/;
 var V6_RE = /^(?=.+)(::)?(((\d{1,3}\.){3}\d{1,3})?|([0-9a-f]{0,4}:{0,2})){1,8}(::)?$/i;
 var V4_S_RE = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/;
 var V6_S_RE = /(([\dA-Fa-f]{1,4}:){7}[\dA-Fa-f]{1,4}|([\dA-Fa-f]{1,4}:){1,7}:|([\dA-Fa-f]{1,4}:){1,6}:[\dA-Fa-f]{1,4}|([\dA-Fa-f]{1,4}:){1,5}(:[\dA-Fa-f]{1,4}){1,2}|([\dA-Fa-f]{1,4}:){1,4}(:[\dA-Fa-f]{1,4}){1,3}|([\dA-Fa-f]{1,4}:){1,3}(:[\dA-Fa-f]{1,4}){1,4}|([\dA-Fa-f]{1,4}:){1,2}(:[\dA-Fa-f]{1,4}){1,5}|[\dA-Fa-f]{1,4}:((:[\dA-Fa-f]{1,4}){1,6})|:((:[\dA-Fa-f]{1,4}){1,7}|:)|fe80:(:[\dA-Fa-f]{0,4}){0,4}%[\dA-Za-z]+|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}\d){0,1}\d)\.){3}(25[0-5]|(2[0-4]|1{0,1}\d){0,1}\d)|([\dA-Fa-f]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}\d){0,1}\d)\.){3}(25[0-5]|(2[0-4]|1{0,1}\d){0,1}\d))$/;
-var isV4Format = (ip) => V4_RE.test(ip);
-var isV6Format = (ip) => V6_RE.test(ip);
+var isV4Format = (ip) => defs.V4_RE.test(ip);
+var isV6Format = (ip) => defs.V6_RE.test(ip);
 var isV4 = (ip) => V4_S_RE.test(ip);
 var isV6 = (ip) => V6_S_RE.test(ip);
+var defs = {
+  V4_RE,
+  V6_RE
+};
+var setMode = (mode) => {
+  if (mode === "legacy") {
+    Object.assign(defs, { V4_RE, V6_RE });
+    return;
+  }
+  if (mode === "strict") {
+    Object.assign(defs, { V4_RE: V4_S_RE, V6_RE: V6_S_RE });
+    return;
+  }
+  throw new Error('mode must be either "legacy" or "strict"');
+};
 function readUInt16BE(buf, offset = 0) {
   if (typeof buf.readUInt16BE === "function") {
     return buf.readUInt16BE(offset);
@@ -263,6 +278,7 @@ export {
   not,
   or,
   readUInt16BE,
+  setMode,
   subnet,
   toBuffer,
   toLong,
