@@ -1,3 +1,36 @@
+// src/main/ts/buffer.ts
+var FakeBuffer = {
+  alloc: (size, fill = 0) => {
+    if (size < 0)
+      throw new RangeError('The value of "size" is out of range.');
+    const arr = new Uint8Array(size);
+    if (fill !== 0)
+      arr.fill(fill);
+    const buf = arr;
+    return Object.assign(buf, {
+      readUInt16BE(offset = 0) {
+        if (offset < 0 || offset + 2 > this.length)
+          throw new RangeError(`RangeError: The value of "offset" is out of range. It must be >= 0 and <= 2. Received ${offset}`);
+        return this[offset] << 8 | this[offset + 1];
+      },
+      slice(start, end) {
+        const sliced = Uint8Array.prototype.slice.call(this, start, end);
+        return Object.assign(sliced, {
+          readUInt16BE: buf.readUInt16BE,
+          slice: buf.slice,
+          toString: buf.toString
+        });
+      },
+      toString(encoding) {
+        if (encoding !== "hex")
+          throw new Error("Only 'hex' encoding is supported in this polyfill");
+        return Array.from(this).map((b) => b.toString(16).padStart(2, "0")).join("");
+      }
+    });
+  }
+};
+var Buffer = (global || globalThis).Buffer || FakeBuffer;
+
 // src/main/ts/core.ts
 var IPV4 = "IPv4";
 var IPV6 = "IPv6";
@@ -24,13 +57,6 @@ var setMode = (mode) => {
   }
   throw new Error('mode must be either "legacy" or "strict"');
 };
-function readUInt16BE(buf, offset = 0) {
-  if (typeof buf.readUInt16BE === "function") {
-    return buf.readUInt16BE(offset);
-  }
-  const view = buf instanceof DataView ? buf : new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
-  return view.getUint16(offset, false);
-}
 function normalizeFamily(family) {
   const f = `${family}`.toLowerCase().trim();
   return f === "6" || f === IPV6.toLowerCase() ? IPV6 : IPV4;
@@ -102,7 +128,7 @@ var toString = (buff, offset = 0, length) => {
   if (l === 4)
     return [...buff.subarray(o, o + l)].join(".");
   if (l === 16)
-    return Array.from({ length: l / 2 }, (_, i) => readUInt16BE(buff, o + i * 2).toString(16)).join(":").replace(/(^|:)0(:0)*:0(:|$)/, "$1::$3").replace(/:{3,4}/, "::");
+    return Array.from({ length: l / 2 }, (_, i) => buff.readUInt16BE(o + i * 2).toString(16)).join(":").replace(/(^|:)0(:0)*:0(:|$)/, "$1::$3").replace(/:{3,4}/, "::");
   throw new Error("Invalid buffer length for IP address");
 };
 var toBuffer = (ip, buff, offset = 0) => {
@@ -234,7 +260,7 @@ var isEqual = (a, b) => {
   }
   if (bb.length === 4) [ab, bb] = [bb, ab];
   for (let i = 0; i < 10; i++) if (bb[i] !== 0) return false;
-  const prefix = readUInt16BE(bb, 10);
+  const prefix = bb.readUInt16BE(10);
   if (prefix !== 0 && prefix !== 65535) return false;
   for (let i = 0; i < 4; i++) if (ab[i] !== bb[i + 12]) return false;
   return true;
@@ -317,7 +343,6 @@ export {
   normalizeToLong,
   not,
   or,
-  readUInt16BE,
   setMode,
   subnet,
   toBuffer,

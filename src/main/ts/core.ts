@@ -1,3 +1,5 @@
+import { Buffer, type BufferLike } from './buffer.ts'
+
 export const IPV4 = 'IPv4'
 export const IPV6 = 'IPv6'
 
@@ -23,19 +25,6 @@ export const setMode = (mode: 'legacy' | 'strict'): void => {
   if (mode === 'strict') { Object.assign(defs, { V4_RE: V4_S_RE, V6_RE: V6_S_RE }); return }
 
   throw new Error('mode must be either "legacy" or "strict"')
-}
-
-export function readUInt16BE(buf: Buffer | Uint8Array | DataView, offset: number = 0): number {
-  if (typeof (buf as Buffer).readUInt16BE === 'function') {
-    // Node.js Buffer or feross/buffer polyfill
-    return (buf as Buffer).readUInt16BE(offset)
-  }
-
-  const view = buf instanceof DataView
-    ? buf
-    : new DataView(buf.buffer, buf.byteOffset, buf.byteLength)
-
-  return view.getUint16(offset, false)
 }
 
 // Corresponds Nodejs.NetworkInterfaceBase
@@ -137,7 +126,7 @@ export const fromLong = (n: number): string => {
 export const toLong = (ip: string): number =>
   ip.split('.').reduce((acc, octet) => (acc << 8) + Number(octet), 0) >>> 0
 
-export const toString = (buff: Buffer, offset = 0, length?: number): string => {
+export const toString = (buff: BufferLike, offset = 0, length?: number): string => {
   const o = ~~offset
   const l = length || (buff.length - offset)
 
@@ -148,7 +137,7 @@ export const toString = (buff: Buffer, offset = 0, length?: number): string => {
   // IPv6
   if (l === 16)
     return Array
-      .from({ length: l / 2 }, (_, i) => readUInt16BE(buff, o + i * 2).toString(16))
+      .from({ length: l / 2 }, (_, i) => buff.readUInt16BE(o + i * 2).toString(16))
       .join(':')
       .replace(/(^|:)0(:0)*:0(:|$)/, '$1::$3')
       .replace(/:{3,4}/, '::')
@@ -156,7 +145,7 @@ export const toString = (buff: Buffer, offset = 0, length?: number): string => {
   throw new Error('Invalid buffer length for IP address')
 }
 
-export const toBuffer = (ip: string, buff?: Buffer, offset = 0): Buffer => {
+export const toBuffer = (ip: string, buff?: BufferLike, offset = 0): BufferLike => {
   offset = ~~offset
 
   if (isV4Format(ip)) {
@@ -345,7 +334,7 @@ export const isEqual = (a: string, b: string): boolean => {
   for (let i = 0; i < 10; i++) if (bb[i] !== 0) return false
 
   // next 2 bytes must be either 0x0000 or 0xffff (::ffff:ipv4)
-  const prefix = readUInt16BE(bb, 10)
+  const prefix = bb.readUInt16BE(10)
   if (prefix !== 0 && prefix !== 0xffff) return false
 
   // last 4 bytes must match IPv4 buffer

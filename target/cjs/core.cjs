@@ -35,7 +35,6 @@ __export(core_exports, {
   normalizeToLong: () => normalizeToLong,
   not: () => not,
   or: () => or,
-  readUInt16BE: () => readUInt16BE,
   setMode: () => setMode,
   subnet: () => subnet,
   toBuffer: () => toBuffer,
@@ -43,6 +42,41 @@ __export(core_exports, {
   toString: () => toString
 });
 module.exports = __toCommonJS(core_exports);
+
+// src/main/ts/buffer.ts
+var FakeBuffer = {
+  alloc: (size, fill = 0) => {
+    if (size < 0)
+      throw new RangeError('The value of "size" is out of range.');
+    const arr = new Uint8Array(size);
+    if (fill !== 0)
+      arr.fill(fill);
+    const buf = arr;
+    return Object.assign(buf, {
+      readUInt16BE(offset = 0) {
+        if (offset < 0 || offset + 2 > this.length)
+          throw new RangeError(`RangeError: The value of "offset" is out of range. It must be >= 0 and <= 2. Received ${offset}`);
+        return this[offset] << 8 | this[offset + 1];
+      },
+      slice(start, end) {
+        const sliced = Uint8Array.prototype.slice.call(this, start, end);
+        return Object.assign(sliced, {
+          readUInt16BE: buf.readUInt16BE,
+          slice: buf.slice,
+          toString: buf.toString
+        });
+      },
+      toString(encoding) {
+        if (encoding !== "hex")
+          throw new Error("Only 'hex' encoding is supported in this polyfill");
+        return Array.from(this).map((b) => b.toString(16).padStart(2, "0")).join("");
+      }
+    });
+  }
+};
+var Buffer2 = (global || globalThis).Buffer || FakeBuffer;
+
+// src/main/ts/core.ts
 var IPV4 = "IPv4";
 var IPV6 = "IPv6";
 var V4_RE = /^(\d{1,3}(\.|$)){4}$/;
@@ -68,13 +102,6 @@ var setMode = (mode) => {
   }
   throw new Error('mode must be either "legacy" or "strict"');
 };
-function readUInt16BE(buf, offset = 0) {
-  if (typeof buf.readUInt16BE === "function") {
-    return buf.readUInt16BE(offset);
-  }
-  const view = buf instanceof DataView ? buf : new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
-  return view.getUint16(offset, false);
-}
 function normalizeFamily(family) {
   const f = `${family}`.toLowerCase().trim();
   return f === "6" || f === IPV6.toLowerCase() ? IPV6 : IPV4;
@@ -146,13 +173,13 @@ var toString = (buff, offset = 0, length) => {
   if (l === 4)
     return [...buff.subarray(o, o + l)].join(".");
   if (l === 16)
-    return Array.from({ length: l / 2 }, (_, i) => readUInt16BE(buff, o + i * 2).toString(16)).join(":").replace(/(^|:)0(:0)*:0(:|$)/, "$1::$3").replace(/:{3,4}/, "::");
+    return Array.from({ length: l / 2 }, (_, i) => buff.readUInt16BE(o + i * 2).toString(16)).join(":").replace(/(^|:)0(:0)*:0(:|$)/, "$1::$3").replace(/:{3,4}/, "::");
   throw new Error("Invalid buffer length for IP address");
 };
 var toBuffer = (ip, buff, offset = 0) => {
   offset = ~~offset;
   if (isV4Format(ip)) {
-    const res = buff || Buffer.alloc(offset + 4);
+    const res = buff || Buffer2.alloc(offset + 4);
     for (const byte of ip.split("."))
       res[offset++] = +byte & 255;
     return res;
@@ -173,7 +200,7 @@ var toBuffer = (ip, buff, offset = 0) => {
     } else {
       while (sections.length < 8) sections.push("0");
     }
-    const res = buff || Buffer.alloc(offset + 16);
+    const res = buff || Buffer2.alloc(offset + 16);
     for (const sec of sections) {
       const word = parseInt(sec, 16) || 0;
       res[offset++] = word >> 8;
@@ -185,7 +212,7 @@ var toBuffer = (ip, buff, offset = 0) => {
 };
 var fromPrefixLen = (prefixlen, family) => {
   family = prefixlen > 32 ? IPV6 : normalizeFamily(family);
-  const buff = Buffer.alloc(family === IPV6 ? 16 : 4);
+  const buff = Buffer2.alloc(family === IPV6 ? 16 : 4);
   for (let i = 0; i < buff.length; i++) {
     const bits = Math.min(prefixlen, 8);
     prefixlen -= bits;
@@ -196,7 +223,7 @@ var fromPrefixLen = (prefixlen, family) => {
 var mask = (addr, maskStr) => {
   const a = toBuffer(addr);
   const m = toBuffer(maskStr);
-  const out = Buffer.alloc(Math.max(a.length, m.length));
+  const out = Buffer2.alloc(Math.max(a.length, m.length));
   if (a.length === m.length) {
     for (let i = 0; i < a.length; i++) out[i] = a[i] & m[i];
   } else if (m.length === 4) {
@@ -278,7 +305,7 @@ var isEqual = (a, b) => {
   }
   if (bb.length === 4) [ab, bb] = [bb, ab];
   for (let i = 0; i < 10; i++) if (bb[i] !== 0) return false;
-  const prefix = readUInt16BE(bb, 10);
+  const prefix = bb.readUInt16BE(10);
   if (prefix !== 0 && prefix !== 65535) return false;
   for (let i = 0; i < 4; i++) if (ab[i] !== bb[i + 12]) return false;
   return true;
@@ -362,7 +389,6 @@ var isSpecial = (addr) => {
   normalizeToLong,
   not,
   or,
-  readUInt16BE,
   setMode,
   subnet,
   toBuffer,
