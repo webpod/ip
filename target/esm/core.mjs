@@ -1,64 +1,21 @@
-"use strict";
-const {
-  __pow,
-  __export,
-  __toESM,
-  __toCommonJS
-} = require('./cjslib.cjs');
-
-
-// src/main/ts/ip.ts
-var ip_exports = {};
-__export(ip_exports, {
-  IPV4: () => IPV4,
-  IPV6: () => IPV6,
-  V4_RE: () => V4_RE,
-  V4_S_RE: () => V4_S_RE,
-  V6_RE: () => V6_RE,
-  V6_S_RE: () => V6_S_RE,
-  address: () => address,
-  addresses: () => addresses,
-  cidr: () => cidr,
-  cidrSubnet: () => cidrSubnet,
-  default: () => ip_default,
-  fromLong: () => fromLong,
-  fromPrefixLen: () => fromPrefixLen,
-  ip: () => ip,
-  isEqual: () => isEqual,
-  isLoopback: () => isLoopback,
-  isPrivate: () => isPrivate,
-  isPublic: () => isPublic,
-  isV4: () => isV4,
-  isV4Format: () => isV4Format,
-  isV6: () => isV6,
-  isV6Format: () => isV6Format,
-  loopback: () => loopback,
-  mask: () => mask,
-  normalizeAddress: () => normalizeAddress,
-  normalizeFamily: () => normalizeFamily,
-  normalizeToLong: () => normalizeToLong,
-  not: () => not,
-  or: () => or,
-  subnet: () => subnet,
-  toBuffer: () => toBuffer,
-  toLong: () => toLong,
-  toString: () => toString
-});
-module.exports = __toCommonJS(ip_exports);
-var import_buffer = require("buffer");
-var import_os = __toESM(require("os"), 1);
-var PUBLIC = "public";
-var PRIVATE = "private";
+// src/main/ts/core.ts
 var IPV4 = "IPv4";
 var IPV6 = "IPv6";
 var V4_RE = /^(\d{1,3}(\.|$)){4}$/;
 var V6_RE = /^(?=.+)(::)?(((\d{1,3}\.){3}\d{1,3})?|([0-9a-f]{0,4}:{0,2})){1,8}(::)?$/i;
 var V4_S_RE = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/;
 var V6_S_RE = /(([\dA-Fa-f]{1,4}:){7}[\dA-Fa-f]{1,4}|([\dA-Fa-f]{1,4}:){1,7}:|([\dA-Fa-f]{1,4}:){1,6}:[\dA-Fa-f]{1,4}|([\dA-Fa-f]{1,4}:){1,5}(:[\dA-Fa-f]{1,4}){1,2}|([\dA-Fa-f]{1,4}:){1,4}(:[\dA-Fa-f]{1,4}){1,3}|([\dA-Fa-f]{1,4}:){1,3}(:[\dA-Fa-f]{1,4}){1,4}|([\dA-Fa-f]{1,4}:){1,2}(:[\dA-Fa-f]{1,4}){1,5}|[\dA-Fa-f]{1,4}:((:[\dA-Fa-f]{1,4}){1,6})|:((:[\dA-Fa-f]{1,4}){1,7}|:)|fe80:(:[\dA-Fa-f]{0,4}){0,4}%[\dA-Za-z]+|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}\d){0,1}\d)\.){3}(25[0-5]|(2[0-4]|1{0,1}\d){0,1}\d)|([\dA-Fa-f]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}\d){0,1}\d)\.){3}(25[0-5]|(2[0-4]|1{0,1}\d){0,1}\d))$/;
-var isV4Format = (ip2) => V4_RE.test(ip2);
-var isV6Format = (ip2) => V6_RE.test(ip2);
-var isV4 = (ip2) => V4_S_RE.test(ip2);
-var isV6 = (ip2) => V6_S_RE.test(ip2);
+var isV4Format = (ip) => V4_RE.test(ip);
+var isV6Format = (ip) => V6_RE.test(ip);
+var isV4 = (ip) => V4_S_RE.test(ip);
+var isV6 = (ip) => V6_S_RE.test(ip);
+function readUInt16BE(buf, offset = 0) {
+  if (typeof buf.readUInt16BE === "function") {
+    return buf.readUInt16BE(offset);
+  }
+  const view = buf instanceof DataView ? buf : new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  return view.getUint16(offset, false);
+}
 function normalizeFamily(family) {
   const f = `${family}`.toLowerCase().trim();
   return f === "6" || f === IPV6.toLowerCase() ? IPV6 : IPV4;
@@ -122,26 +79,26 @@ var fromLong = (n) => {
     n & 255
   ].join(".");
 };
-var toLong = (ip2) => ip2.split(".").reduce((acc, octet) => (acc << 8) + Number(octet), 0) >>> 0;
+var toLong = (ip) => ip.split(".").reduce((acc, octet) => (acc << 8) + Number(octet), 0) >>> 0;
 var toString = (buff, offset = 0, length) => {
   const o = ~~offset;
   const l = length || buff.length - offset;
   if (l === 4)
     return [...buff.subarray(o, o + l)].join(".");
   if (l === 16)
-    return Array.from({ length: l / 2 }, (_, i) => buff.readUInt16BE(o + i * 2).toString(16)).join(":").replace(/(^|:)0(:0)*:0(:|$)/, "$1::$3").replace(/:{3,4}/, "::");
+    return Array.from({ length: l / 2 }, (_, i) => readUInt16BE(buff, o + i * 2).toString(16)).join(":").replace(/(^|:)0(:0)*:0(:|$)/, "$1::$3").replace(/:{3,4}/, "::");
   throw new Error("Invalid buffer length for IP address");
 };
-var toBuffer = (ip2, buff, offset = 0) => {
+var toBuffer = (ip, buff, offset = 0) => {
   offset = ~~offset;
-  if (isV4Format(ip2)) {
-    const res = buff || import_buffer.Buffer.alloc(offset + 4);
-    for (const byte of ip2.split("."))
+  if (isV4Format(ip)) {
+    const res = buff || Buffer.alloc(offset + 4);
+    for (const byte of ip.split("."))
       res[offset++] = +byte & 255;
     return res;
   }
-  if (isV6Format(ip2)) {
-    let sections = ip2.split(":", 8);
+  if (isV6Format(ip)) {
+    let sections = ip.split(":", 8);
     for (let i = 0; i < sections.length; i++) {
       if (isV4Format(sections[i])) {
         const v4 = toBuffer(sections[i]);
@@ -156,7 +113,7 @@ var toBuffer = (ip2, buff, offset = 0) => {
     } else {
       while (sections.length < 8) sections.push("0");
     }
-    const res = buff || import_buffer.Buffer.alloc(offset + 16);
+    const res = buff || Buffer.alloc(offset + 16);
     for (const sec of sections) {
       const word = parseInt(sec, 16) || 0;
       res[offset++] = word >> 8;
@@ -164,11 +121,11 @@ var toBuffer = (ip2, buff, offset = 0) => {
     }
     return res;
   }
-  throw Error(`Invalid ip address: ${ip2}`);
+  throw Error(`Invalid ip address: ${ip}`);
 };
 var fromPrefixLen = (prefixlen, family) => {
   family = prefixlen > 32 ? IPV6 : normalizeFamily(family);
-  const buff = import_buffer.Buffer.alloc(family === IPV6 ? 16 : 4);
+  const buff = Buffer.alloc(family === IPV6 ? 16 : 4);
   for (let i = 0; i < buff.length; i++) {
     const bits = Math.min(prefixlen, 8);
     prefixlen -= bits;
@@ -179,7 +136,7 @@ var fromPrefixLen = (prefixlen, family) => {
 var mask = (addr, maskStr) => {
   const a = toBuffer(addr);
   const m = toBuffer(maskStr);
-  const out = import_buffer.Buffer.alloc(Math.max(a.length, m.length));
+  const out = Buffer.alloc(Math.max(a.length, m.length));
   if (a.length === m.length) {
     for (let i = 0; i < a.length; i++) out[i] = a[i] & m[i];
   } else if (m.length === 4) {
@@ -206,7 +163,7 @@ var subnet = (addr, smask) => {
       }
     }
   }
-  const numAddresses = __pow(2, 32 - maskLen);
+  const numAddresses = 2 ** (32 - maskLen);
   const numHosts = numAddresses <= 2 ? numAddresses : numAddresses - 2;
   const firstAddress = numAddresses <= 2 ? networkAddress : networkAddress + 1;
   const lastAddress = numAddresses <= 2 ? networkAddress + numAddresses - 1 : networkAddress + numAddresses - 2;
@@ -219,8 +176,8 @@ var subnet = (addr, smask) => {
     subnetMaskLength: maskLen,
     numHosts,
     length: numAddresses,
-    contains(ip2) {
-      return networkAddress === toLong(mask(ip2, smask));
+    contains(ip) {
+      return networkAddress === toLong(mask(ip, smask));
     }
   };
 };
@@ -261,7 +218,7 @@ var isEqual = (a, b) => {
   }
   if (bb.length === 4) [ab, bb] = [bb, ab];
   for (let i = 0; i < 10; i++) if (bb[i] !== 0) return false;
-  const prefix = bb.readUInt16BE(10);
+  const prefix = readUInt16BE(bb, 10);
   if (prefix !== 0 && prefix !== 65535) return false;
   for (let i = 0; i < 4; i++) if (ab[i] !== bb[i + 12]) return false;
   return true;
@@ -278,64 +235,17 @@ var isPrivate = (addr) => {
   addr === "::";
 };
 var isPublic = (addr) => !isPrivate(addr);
-var addresses = (name, family) => {
-  const interfaces = import_os.default.networkInterfaces();
-  const fam = normalizeFamily(family);
-  const check = name === PUBLIC ? isPublic : name === PRIVATE ? isPrivate : () => true;
-  if (name && name !== PRIVATE && name !== PUBLIC) {
-    const nic = interfaces[name];
-    if (!nic) return [];
-    const match = nic.find((details) => normalizeFamily(details.family) === fam);
-    return [match == null ? void 0 : match.address];
-  }
-  const all = Object.values(interfaces).reduce((acc, nic) => {
-    for (const { family: family2, address: address2 } of nic != null ? nic : []) {
-      if (normalizeFamily(family2) !== fam) continue;
-      if (isLoopback(address2)) continue;
-      if (check(address2)) acc.push(address2);
-    }
-    return acc;
-  }, []);
-  return all.length ? all : [loopback(fam)];
-};
-var address = (name, family) => addresses(name, family)[0];
-var ip = {
-  address,
-  cidr,
-  cidrSubnet,
-  fromLong,
-  fromPrefixLen,
-  isEqual,
-  isLoopback,
-  isPrivate,
-  isPublic,
-  isV4Format,
-  isV6Format,
-  loopback,
-  mask,
-  not,
-  or,
-  subnet,
-  toBuffer,
-  toLong,
-  toString
-};
-var ip_default = ip;
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
+export {
   IPV4,
   IPV6,
   V4_RE,
   V4_S_RE,
   V6_RE,
   V6_S_RE,
-  address,
-  addresses,
   cidr,
   cidrSubnet,
   fromLong,
   fromPrefixLen,
-  ip,
   isEqual,
   isLoopback,
   isPrivate,
@@ -351,8 +261,9 @@ var ip_default = ip;
   normalizeToLong,
   not,
   or,
+  readUInt16BE,
   subnet,
   toBuffer,
   toLong,
   toString
-});
+};

@@ -72,7 +72,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, windows-latest ]
-        node-version: [ 12, 18, 24 ]
+        node-version: [ 8, 12, 18, 24 ]
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -105,6 +105,26 @@ jobs:
 
       - name: Run smoke:cjs tests
         run: npm run test:smoke:cjs
+
+  smoke-browser:
+    runs-on: ubuntu-latest
+    name: Smoke Browser
+    needs: build
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: 'npm'
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+      - run: |
+          npm ci
+          npx playwright install --with-deps
+          npm run test:smoke:browser
+  
 
 #  smoke-bun:
 #    runs-on: ubuntu-latest

@@ -1,8 +1,3 @@
-import { Buffer } from 'buffer'
-import os from 'os'
-
-const PUBLIC = 'public'
-const PRIVATE = 'private'
 export const IPV4 = 'IPv4'
 export const IPV6 = 'IPv6'
 
@@ -17,6 +12,19 @@ export const isV4Format = (ip: string): boolean => V4_RE.test(ip) // Legacy
 export const isV6Format = (ip: string): boolean => V6_RE.test(ip) // Legacy
 export const isV4 = (ip: string): boolean => V4_S_RE.test(ip)
 export const isV6 = (ip: string): boolean => V6_S_RE.test(ip)
+
+export function readUInt16BE(buf: Buffer | Uint8Array | DataView, offset: number = 0): number {
+  if (typeof (buf as Buffer).readUInt16BE === 'function') {
+    // Node.js Buffer or feross/buffer polyfill
+    return (buf as Buffer).readUInt16BE(offset)
+  }
+
+  const view = buf instanceof DataView
+    ? buf
+    : new DataView(buf.buffer, buf.byteOffset, buf.byteLength)
+
+  return view.getUint16(offset, false)
+}
 
 // Corresponds Nodejs.NetworkInterfaceBase
 export type Family = typeof IPV4 | typeof IPV6
@@ -127,8 +135,7 @@ export const toString = (buff: Buffer, offset = 0, length?: number): string => {
   // IPv6
   if (l === 16)
     return Array
-      .from({ length: l / 2 }, (_, i) =>
-        buff.readUInt16BE(o + i * 2).toString(16))
+      .from({ length: l / 2 }, (_, i) => readUInt16BE(buff, o + i * 2).toString(16))
       .join(':')
       .replace(/(^|:)0(:0)*:0(:|$)/, '$1::$3')
       .replace(/:{3,4}/, '::')
@@ -325,7 +332,7 @@ export const isEqual = (a: string, b: string): boolean => {
   for (let i = 0; i < 10; i++) if (bb[i] !== 0) return false
 
   // next 2 bytes must be either 0x0000 or 0xffff (::ffff:ipv4)
-  const prefix = bb.readUInt16BE(10)
+  const prefix = readUInt16BE(bb, 10)
   if (prefix !== 0 && prefix !== 0xffff) return false
 
   // last 4 bytes must match IPv4 buffer
@@ -351,59 +358,3 @@ export const isPrivate = (addr: string): boolean => {
 }
 
 export const isPublic = (addr: string): boolean => !isPrivate(addr)
-
-export const addresses = (name?: string, family?: string): string[] => {
-  const interfaces = os.networkInterfaces()
-  const fam = normalizeFamily(family)
-  const check =
-    name === PUBLIC ? isPublic
-    : name === PRIVATE ? isPrivate
-      : () => true
-
-  // specific NIC requested
-  if (name && name !== PRIVATE && name !== PUBLIC) {
-    const nic = interfaces[name]
-    if (!nic) return []
-    const match = nic.find(details => normalizeFamily(details.family) === fam)
-    return [match?.address!]
-  }
-
-  // scan all NICs
-  const all = Object.values(interfaces).reduce<string[]>((acc, nic) => {
-    for (const {family, address} of nic ?? []) {
-      if (normalizeFamily(family) !== fam) continue
-      if (isLoopback(address)) continue
-      if (check(address)) acc.push(address)
-    }
-    return acc
-  }, [])
-
-  return all.length ? all : [loopback(fam)]
-}
-
-export const address = (name?: string, family?: string): string | undefined =>
-  addresses(name, family)[0]
-
-export const ip = {
-  address,
-  cidr,
-  cidrSubnet,
-  fromLong,
-  fromPrefixLen,
-  isEqual,
-  isLoopback,
-  isPrivate,
-  isPublic,
-  isV4Format,
-  isV6Format,
-  loopback,
-  mask,
-  not,
-  or,
-  subnet,
-  toBuffer,
-  toLong,
-  toString,
-}
-
-export default ip
