@@ -1,11 +1,9 @@
-import os from 'node:os'
-import net from 'node:net'
-import {Buffer} from 'node:buffer'
 import assert from 'node:assert'
-import {test, describe} from 'node:test'
+import {test, describe} from 'vitest'
 
 import {
   normalizeFamily,
+  normalizeToLong,
   IPV4,
   IPV6,
   V4_RE,
@@ -49,7 +47,20 @@ describe('core', () => {
     ]
     for (const [input, expected] of cases) {
       const result = normalizeFamily(input)
-      assert.strictEqual(result, expected, `normalizeFamily(${input}) === ${expected}`)
+      assert.equal(result, expected, `normalizeFamily(${input}) === ${expected}`)
+    }
+  })
+
+  test('normalizeToLong()', () => {
+    const cases: [string, number][] = [
+      ['2130706433', 2130706433],
+      ['127.1', 2130706433],
+      ['0177.0.0.1', 2130706433],
+      ['1.2.3.4.5', -1],
+    ]
+
+    for (const [input, expected] of cases) {
+      assert.equal(normalizeToLong(input), expected, `normalizeToLong(${input}) === ${expected}`)
     }
   })
 
@@ -160,6 +171,8 @@ describe('core', () => {
       assert.equal(hex, h, `toBuffer(${input}).toString('hex') === ${h}`)
       assert.equal(str, s, `toString(toBuffer(${input})) === ${s}`)
     }
+
+    assert.throws(() => toBuffer(''), /Error: invalid IP address/)
   })
 
   test('fromPrefixLen()', () => {

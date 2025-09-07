@@ -185,7 +185,7 @@ export const toBuffer = (ip: string, buff?: Buffer, offset = 0): Buffer => {
     return res
   }
 
-  throw Error(`Invalid ip address: ${ip}`)
+  throw Error(`invalid IP address: ${ip}`)
 }
 
 export const fromPrefixLen = (prefixlen: number, family?: string | number): string => {
