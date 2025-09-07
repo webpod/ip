@@ -58,23 +58,24 @@ export const normalizeToLong = (addr: string): number => {
   })
 
   if (parts.some(isNaN)) return -1
+  const [p0, p1, p2, p3] = parts
 
   let val: number
   switch (parts.length) {
     case 1:
-      val = parts[0]
+      val = p0
       break
     case 2:
-      if (parts[0] > 0xff || parts[1] > 0xffffff) return -1
-      val = (parts[0] << 24) | (parts[1] & 0xffffff)
+      if (p0 > 0xff || p1 > 0xffffff) return -1
+      val = (p0 << 24) | (p1 & 0xffffff)
       break
     case 3:
-      if (parts[0] > 0xff || parts[1] > 0xff || parts[2] > 0xffff) return -1
-      val = (parts[0] << 24) | (parts[1] << 16) | (parts[2] & 0xffff)
+      if (p0 > 0xff || p1 > 0xff || p2 > 0xffff) return -1
+      val = (p0 << 24) | (p1 << 16) | (p2 & 0xffff)
       break
     case 4:
       if (parts.some(p => p > 0xff)) return -1
-      val = (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]
+      val = (p0 << 24) | (p1 << 16) | (p2 << 8) | p3
       break
     default:
       return -1
