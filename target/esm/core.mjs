@@ -35,22 +35,23 @@ var normalizeToLong = (addr) => {
     return NaN;
   });
   if (parts.some(isNaN)) return -1;
+  const [p0, p1, p2, p3] = parts;
   let val;
   switch (parts.length) {
     case 1:
-      val = parts[0];
+      val = p0;
       break;
     case 2:
-      if (parts[0] > 255 || parts[1] > 16777215) return -1;
-      val = parts[0] << 24 | parts[1] & 16777215;
+      if (p0 > 255 || p1 > 16777215) return -1;
+      val = p0 << 24 | p1 & 16777215;
       break;
     case 3:
-      if (parts[0] > 255 || parts[1] > 255 || parts[2] > 65535) return -1;
-      val = parts[0] << 24 | parts[1] << 16 | parts[2] & 65535;
+      if (p0 > 255 || p1 > 255 || p2 > 65535) return -1;
+      val = p0 << 24 | p1 << 16 | p2 & 65535;
       break;
     case 4:
       if (parts.some((p) => p > 255)) return -1;
-      val = parts[0] << 24 | parts[1] << 16 | parts[2] << 8 | parts[3];
+      val = p0 << 24 | p1 << 16 | p2 << 8 | p3;
       break;
     default:
       return -1;
@@ -121,7 +122,7 @@ var toBuffer = (ip, buff, offset = 0) => {
     }
     return res;
   }
-  throw Error(`Invalid ip address: ${ip}`);
+  throw Error(`invalid IP address: ${ip}`);
 };
 var fromPrefixLen = (prefixlen, family) => {
   family = prefixlen > 32 ? IPV6 : normalizeFamily(family);
