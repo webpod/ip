@@ -28,7 +28,8 @@ import {
   cidr,
   cidrSubnet,
   or,
-  not
+  not,
+  setMode
 } from '../../main/ts/core.ts'
 
 describe('core', () => {
@@ -371,5 +372,23 @@ describe('core', () => {
       assert.equal(isPrivate(input), !!expected, `isPrivate(${input}) === ${!!expected}`)
       assert.equal(isPublic(input), !expected, `isPublic(${input}) === ${!expected}`)
     }
+  })
+
+  describe('setMode()', () => {
+    test('sets ipv4/ipv6 mode', () => {
+      setMode('legacy')
+      assert.equal(isV4Format('999.999.999.999'), true)
+      assert.equal(isV4('999.999.999.999'), false)
+      assert.equal(isV6Format('127.0.0.1'), true)
+      assert.equal(isV6('127.0.0.1'), false)
+
+      setMode('strict')
+      assert.equal(isV4Format('999.999.999.999'), false)
+      assert.equal(isV4('999.999.999.999'), false)
+      assert.equal(isV6Format('127.0.0.1'), false)
+      assert.equal(isV6('127.0.0.1'), false)
+
+      setMode('legacy')
+    })
   })
 })
