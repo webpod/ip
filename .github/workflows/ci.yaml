@@ -9,11 +9,16 @@ env:
   npm_config_save: false
   npm_config_package_lock: false
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - name: Use Node.js 24
         uses: actions/setup-node@v5
         with:
@@ -30,37 +35,52 @@ jobs:
             jsr.json
           retention-days: 1
 
-  push:
-    name: Push ${{ github.ref }}
+  test:
     needs: build
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    permissions:
-      checks: read
-      statuses: write
-      contents: write
-      packages: write
-      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
         with:
-          fetch-depth: ${{ github.ref == 'refs/heads/main' && '0' || '1' }}
+          persist-credentials: false
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: 'npm'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: build
       - name: Fetch deps
         run: npm ci
       - name: Run tests
         run: npm run test
-
-#      - name: Semantic Release (npm)
-#        if: github.ref == 'refs/heads/main'
+        
+#  release:
+#    name: Release ${{ github.ref }}
+#    needs: test
+#    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+#    runs-on: ubuntu-latest
+#    permissions:
+#      checks: read
+#      statuses: write
+#      contents: write
+#      packages: write
+#      id-token: write
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v5
+#        with:
+#          fetch-depth: 0
+#      - name: Setup Node.js
+#        uses: actions/setup-node@v5
+#        with:
+#          node-version: 24
+#          cache: 'npm'
+#      - uses: actions/download-artifact@v5
+#        with:
+#          name: build
+#      - name: Run release
 #        env:
 #          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 #          NPM_PROVENANCE: true
@@ -72,50 +92,57 @@ jobs:
 #          GIT_COMMITTER_EMAIL: ${{ vars.GIT_COMMITTER_EMAIL }}
 #        run: npx zx-semrel
 
-  pr:
+  smoke-node:
     if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
     needs: build
-    name: PR (Node v${{ matrix.node-version }}, OS ${{ matrix.os }})
+    name: smoke-node${{ matrix.node-version }}
     strategy:
       matrix:
-        os: [ ubuntu-latest, windows-latest ]
-        node-version: [ 8, 12, 18, 24 ]
-
-    runs-on: ${{ matrix.os }}
+        node-version: [8, 12, 18, 24]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: build
-
-      - name: Run all tests
-        if: matrix.os == 'ubuntu-latest' && matrix.node-version == 24
-        run: |
-          npm ci
-          npm run test
-#      - name: Run spawn tests (win32)
-#        if: matrix.os == 'windows-latest' && matrix.node-version == 24
-#        run: |
-#          npm ci
-#          node --loader ts-node/esm --experimental-specifier-resolution=node ./src/test/ts/spawn.test.ts
-#        timeout-minutes: 5
-#
       - name: Run smoke:esm tests
         if: matrix.node-version >= 12
         run: npm run smoke:esm
+      - name: Run smoke:cjs tests
+        run: npm run smoke:cjs
 
+  smoke-node-win32:
+    if: github.event_name == 'pull_request'
+    runs-on: windows-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: 'npm'
+      - uses: actions/download-artifact@v5
+        with:
+          name: build
+      - name: Run smoke:esm tests
+        run: npm run smoke:esm
       - name: Run smoke:cjs tests
         run: npm run smoke:cjs
 
   smoke-browser:
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 5
     runs-on: ubuntu-latest
-    name: Smoke Browser
     needs: build
     steps:
       - uses: actions/checkout@v5
@@ -124,45 +151,45 @@ jobs:
         with:
           node-version: 24
           cache: 'npm'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: build
       - run: |
           npm ci
           npx playwright install --with-deps chromium
           npm run smoke:browser
-  
 
-#  smoke-bun:
-#    runs-on: ubuntu-latest
-#    name: Smoke Bun
-#    needs: build
-#    steps:
-#      - uses: actions/checkout@v5
-#      - name: Setup Bun
-#        uses: antongolub/action-setup-bun@v1
-#      - uses: actions/download-artifact@v4
-#        with:
-#          name: build
-#      - run: |
-#          bun ./src/test/smoke/invoke.test.cjs
-#          bun ./src/test/smoke/invoke.test.mjs
-#
-#  smoke-deno:
-#    runs-on: ubuntu-latest
-#    name: Smoke Deno ${{ matrix.deno-version }}
-#    needs: build
-#    strategy:
-#      matrix:
-#        deno-version: [ v1.x, v2.x ]
-#    steps:
-#      - uses: actions/checkout@v5
-#      - name: Setup Deno
-#        uses: denoland/setup-deno@v2
-#        with:
-#          deno-version: ${{ matrix.deno-version }}
-#      - run: deno install npm:types/node
-#      - uses: actions/download-artifact@v4
-#        with:
-#          name: build
-#      - run: deno test --allow-read --allow-sys --allow-env --allow-run ./src/test/smoke/invoke.test.mjs
+  smoke-bun:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup Bun
+        uses: antongolub/action-setup-bun@v1
+      - uses: actions/download-artifact@v5
+        with:
+          name: build
+      - run: |
+          bun ./src/test/smoke/node.test.cjs
+          bun ./src/test/smoke/node.test.mjs
+
+  smoke-deno:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    name: smoke-deno${{ matrix.deno-version }}
+    needs: build
+    strategy:
+      matrix:
+        deno-version: [ v1.x, v2.x ]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ matrix.deno-version }}
+      - run: deno install npm:types/node
+      - uses: actions/download-artifact@v5
+        with:
+          name: build
+      - run: deno test --allow-read --allow-sys --allow-env --allow-run ./src/test/smoke/node.test.mjs
