@@ -18,6 +18,7 @@ import {
   isEqual,
   isPrivate,
   isPublic,
+  isSpecial,
   fromLong,
   fromPrefixLen,
   toBuffer,
@@ -343,6 +344,8 @@ describe('core', () => {
       ['10.1.23.45', true],
       ['12.1.2.3'],
 
+      ['198.18.0.0'],
+
       ['fd12:3456:789a:1::1', true],
       ['fe80::f2de:f1ff:fe3f:307e', true],
       ['::ffff:10.100.1.42', true],
@@ -371,6 +374,32 @@ describe('core', () => {
     for (const [input, expected] of cases) {
       assert.equal(isPrivate(input), !!expected, `isPrivate(${input}) === ${!!expected}`)
       assert.equal(isPublic(input), !expected, `isPublic(${input}) === ${!expected}`)
+    }
+  })
+
+  test('isSpecial()', () => {
+    const cases: [string, boolean?][] = [
+      ['1.2.3.4', false],
+      ['77.66.55.44', false],
+      ['0.0.0.0', true],      ['0.255.255.255', true],
+      ['100.64.0.0', true],   ['100.127.255.255', true],
+      ['127.0.0.0', true],    ['127.255.255.255', true],
+      ['169.254.0.0', true],  ['169.254.255.255', true],
+      ['172.16.0.0', true],   ['172.31.255.255', true],
+      ['192.0.0.0', true],    ['192.0.0.255', true],
+      ['192.0.2.0', true],    ['192.0.2.255', true],
+      ['192.88.99.0', true],  ['192.88.99.255', true],
+      ['192.168.0.0', true],  ['192.168.255.255', true],
+      ['198.18.0.0', true],   ['198.19.255.255', true],
+      ['198.51.100.0', true], ['198.51.100.255', true],
+      ['203.0.113.0', true],  ['203.0.113.255', true],
+      ['224.0.0.0', true],    ['239.255.255.255', true],
+      ['233.252.0.0', true],  ['233.252.0.255', true],
+      ['240.0.0.0', true],    ['255.255.255.254', true],
+      ['255.255.255.255', true],
+    ]
+    for (const [input, expected] of cases) {
+      assert.equal(isSpecial(input), !!expected, `isSpecial(${input}) === ${!!expected}`)
     }
   })
 

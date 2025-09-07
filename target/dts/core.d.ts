@@ -43,4 +43,5 @@ export declare const or: (a: string, b: string) => string;
 export declare const isEqual: (a: string, b: string) => boolean;
 export declare const isPrivate: (addr: string) => boolean;
 export declare const isPublic: (addr: string) => boolean;
+export declare const isSpecial: (addr: string) => boolean;
 export {};

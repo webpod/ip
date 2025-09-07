@@ -93,8 +93,12 @@ ip.subnet('192.168.1.134', '255.255.255.192')
 ip.cidrSubnet('192.168.1.134/26').contains('192.168.1.190') // true
 ```
 
-Additional features:
+### Additional features
 ```ts
+// -------------------------------------------------------
+// Strict mode switcher
+// -------------------------------------------------------
+
 ip.isV4Format('255.255.255.256')   // true
 ip.isV6Format('127.0.0.1')         // true
 
@@ -105,6 +109,14 @@ ip.isV6Format('127.0.0.1')         // false
 // new methods are always strict
 ip.isV4('255.255.255.256')         // false
 ip.isV6('127.0.0.1')               // false
+
+
+// -------------------------------------------------------
+// Special ranges detection
+// -------------------------------------------------------
+
+is.isPrivate('198.18.0.0')         // false
+ip.isSpecial('198.18.0.0')         // true
 ```
 
 ## License

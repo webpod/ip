@@ -53,6 +53,7 @@ export declare const ip: {
     isEqual: (a: string, b: string) => boolean;
     isPrivate: (addr: string) => boolean;
     isPublic: (addr: string) => boolean;
+    isSpecial: (addr: string) => boolean;
     addresses: (name?: string, family?: string) => string[];
     address: (name?: string, family?: string) => string | undefined;
 };
