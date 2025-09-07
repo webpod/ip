@@ -1,4 +1,4 @@
-import assert from 'assert'
+import assert from 'node:assert'
 import ip from '@webpod/ip'
 
 // Smoke ESM test
