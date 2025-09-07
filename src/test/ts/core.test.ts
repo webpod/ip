@@ -379,10 +379,14 @@ describe('core', () => {
       setMode('legacy')
       assert.equal(isV4Format('999.999.999.999'), true)
       assert.equal(isV4('999.999.999.999'), false)
+      assert.equal(isV6Format('127.0.0.1'), true)
+      assert.equal(isV6('127.0.0.1'), false)
 
       setMode('strict')
       assert.equal(isV4Format('999.999.999.999'), false)
       assert.equal(isV4('999.999.999.999'), false)
+      assert.equal(isV6Format('127.0.0.1'), false)
+      assert.equal(isV6('127.0.0.1'), false)
 
       setMode('legacy')
     })
