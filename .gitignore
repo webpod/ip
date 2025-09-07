@@ -13,6 +13,7 @@ buildstamp.json
 
 # Temp
 temp
+test-results
 
 #
 .npmrc
