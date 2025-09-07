@@ -2,6 +2,7 @@
 node_modules/
 yarn.lock
 pnpm-lock.yaml
+deno.lock
 
 # Bundles
 target/*

@@ -42,6 +42,7 @@
     "smoke:esm": "node ./src/test/smoke/node.test.mjs",
     "smoke:cjs": "node src/test/smoke/node.test.cjs",
     "smoke:browser": "npx vitest run --config src/test/smoke/vitest.browser.config.js",
+    "smoke:deno": "deno test ./src/test/smoke/deno.test.js --allow-read --allow-sys --allow-env --allow-run",
     "_publish:draft": "npm run build && npm publish --no-git-tag-version",
     "_postrelease": "node src/scripts/build-jsr.mjs && jsr publish --allow-dirty"
   },
