@@ -192,4 +192,4 @@ jobs:
       - uses: actions/download-artifact@v5
         with:
           name: build
-      - run: deno test --allow-read --allow-sys --allow-env --allow-run ./src/test/smoke/node.test.mjs
+      - run: deno test ./src/test/smoke/deno.test.js --allow-read --allow-sys --allow-env --allow-run
