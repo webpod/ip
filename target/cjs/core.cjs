@@ -113,8 +113,8 @@ function normalizeFamily(family) {
   return f === "6" || f === IPV6.toLowerCase() ? IPV6 : IPV4;
 }
 var normalizeAddress = (addr) => {
-  const _a = (addr + "").toLowerCase();
-  return _a.includes(":") ? toString(toBuffer(_a)) : fromLong(normalizeToLong(_a));
+  const a = (addr + "").toLowerCase();
+  return a.includes(":") ? toString(toBuffer(a)) : fromLong(normalizeToLong(a));
 };
 var normalizeToLong = (addr) => {
   const parts = addr.split(".").map((part) => {
@@ -365,7 +365,8 @@ var SPECIALS = [
 ].map(cidrSubnet);
 var isSpecial = (addr) => {
   const a = normalizeAddress(addr);
-  return SPECIALS.some((sn) => sn.contains(addr));
+  if (isLoopback(a)) return true;
+  return SPECIALS.some((sn) => sn.contains(a));
 };
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {

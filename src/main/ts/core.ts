@@ -37,11 +37,11 @@ export function normalizeFamily(family?: string | number): Family {
 }
 
 export const normalizeAddress = (addr: string | number): string => {
-  const _a = (addr + '').toLowerCase()
+  const a = (addr + '').toLowerCase()
 
-  return _a.includes(':')
-    ? toString(toBuffer(_a))
-    : fromLong(normalizeToLong(_a))
+  return a.includes(':')
+    ? toString(toBuffer(a))
+    : fromLong(normalizeToLong(a))
 }
 
 export const normalizeToLong = (addr: string): number => {
@@ -361,6 +361,7 @@ export const isPrivate = (addr: string): boolean => {
 
 export const isPublic = (addr: string): boolean => !isPrivate(addr)
 
+// https://en.wikipedia.org/wiki/Reserved_IP_addresses
 const SPECIALS = [
   '0.0.0.0/8',
   '10.0.0.0/8',
@@ -400,9 +401,6 @@ const SPECIALS = [
 
 export const isSpecial = (addr: string): boolean => {
   const a = normalizeAddress(addr)
-
-  // if (isLoopback(a)) return true
-
-  // https://en.wikipedia.org/wiki/Reserved_IP_addresses
-  return SPECIALS.some(sn => sn.contains(addr))
+  if (isLoopback(a)) return true
+  return SPECIALS.some(sn => sn.contains(a))
 }
