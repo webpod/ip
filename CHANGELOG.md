@@ -1,3 +1,9 @@
+## [0.0.1](https://github.com/webpod/ip/compare/v0.0.0...v0.0.1) (2025-09-08)
+
+### Fixes & improvements
+* docs: mention browser-compatible `./core` ([7995be0](https://github.com/webpod/ip/commit/7995be06c540521f2e159c9fc665ca383cc0ab48))
+* fix(pkg): set pkg access public ([d3ac90f](https://github.com/webpod/ip/commit/d3ac90fa6f5d04f86eca44812e758f7a73ffca4a))
+
 ## [0.0.0](https://github.com/webpod/ip/compare/undefined...v0.0.0) (2025-09-08)
 
 ### Fixes & improvements
@@ -11,5 +17,3 @@
 * feat: separate browser compat `core` layer ([f124b00](https://github.com/webpod/ip/commit/f124b0044631b0d6abdd87d2026dc9c95334cb1b))
 * feat: mvp (#3) ([78f0ff2](https://github.com/webpod/ip/commit/78f0ff2668621b8e380751997003c76d1e57b38d))
 * feat: expose ESM and CJS entry points (#2) ([a6ae47a](https://github.com/webpod/ip/commit/a6ae47ad7145945d6b73bdb0e50c11bffd92b24d))
-
-
