@@ -27,6 +27,7 @@ Temporary workaround to avoid refactoring is using `overrides` / `resolutions` i
 }
 ```
 
+Browser-compatible core build is available as `@webpod/ip/core`: it omits `node:os` dependency and polyfills the `Buffer` API.
 
 ## Usage
 The API is fully compatible with the latest `ip@2.0.1`
