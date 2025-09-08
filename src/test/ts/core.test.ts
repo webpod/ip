@@ -2,6 +2,7 @@ import assert from 'node:assert'
 import {test, describe} from 'vitest'
 
 import {
+  type BufferLike,
   normalizeFamily,
   normalizeToLong,
   IPV4,
@@ -144,9 +145,10 @@ describe('core', () => {
   })
 
   test('toLong()', () => {
-    const cases: [string, number][] = [
+    const cases: [string | BufferLike, number][] = [
       ['127.0.0.1', 2130706433],
-      ['255.255.255.255', 4294967295]
+      ['255.255.255.255', 4294967295],
+      [Buffer.from([127, 0, 0, 1]), 2130706433],
     ]
 
     for (const [input, expected] of cases) {
@@ -156,8 +158,9 @@ describe('core', () => {
 
   test('toBuffer()/toString()', () => {
     const u = undefined
-    const cases: [string, Buffer | undefined, number | undefined, number | undefined, string, string?][] = [
+    const cases: [string | number, Buffer | undefined, number | undefined, number | undefined, string, string?][] = [
       ['127.0.0.1', u, u, u, '7f000001'],
+      [2130706433, u, u, u, '7f000001'],
       ['::ffff:127.0.0.1', u, u, u, '00000000000000000000ffff7f000001', '::ffff:7f00:1'],
       ['127.0.0.1', Buffer.alloc(128), 64, 4, '0'.repeat(128) + '7f000001' + '0'.repeat(120)],
       ['::1', u, u, u, '00000000000000000000000000000001'],
@@ -172,13 +175,22 @@ describe('core', () => {
     for (const [input, b, o, l, h, s = input] of cases) {
       const buf = toBuffer(input, b, o)
       const str = toString(buf, o, l)
+      const long = toLong(buf)
       const hex = buf.toString('hex')
 
       assert.equal(hex, h, `toBuffer(${input}).toString('hex') === ${h}`)
-      assert.equal(str, s, `toString(toBuffer(${input})) === ${s}`)
+
+      if (typeof s === 'string') assert.equal(str, s, `toString(toBuffer(${input})) === ${s}`)
+      if (typeof s === 'number') assert.equal(long, s, `toLong(toBuffer(${input})) === ${s}`)
     }
 
     assert.throws(() => toBuffer(''), /Error: invalid IP address/)
+  })
+
+  test('toLong(), toString(), toBuffer() roundtrip', () => {
+    assert.deepEqual(toLong('127.0.0.1'), toLong(toBuffer('127.0.0.1')))
+    assert.equal(toLong('127.0.0.1'), toLong(toBuffer('127.0.0.1')))
+    assert.equal(toString(toBuffer(2130706433)), toString(2130706433))
   })
 
   test('fromPrefixLen()', () => {
@@ -208,7 +220,7 @@ describe('core', () => {
   })
 
   test('subnet()', () => {
-    const cases: [string, string, Record<string, any>, string[], string[]][] = [
+    const cases: [string, string, Record<string, any>, (string | number | BufferLike)[], (string | number | BufferLike)[]][] = [
       ['192.168.1.134', '255.255.255.192', {
         networkAddress: '192.168.1.128',
         firstAddress:   '192.168.1.129',
@@ -218,7 +230,14 @@ describe('core', () => {
         subnetMaskLength: 26,
         numHosts:      62,
         length:        64,
-      }, ['192.168.1.180'], ['192.168.1.192']],
+      }, [
+        '192.168.1.180',
+        '192.168.1.128',
+        toLong('192.168.1.180'),
+        toBuffer('192.168.1.180'),
+      ], [
+        '192.168.1.192'
+      ]],
 
       ['192.168.1.134', '255.255.255.255', {
         firstAddress: '192.168.1.134',

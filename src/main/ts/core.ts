@@ -1,5 +1,7 @@
 import { Buffer, type BufferLike } from './buffer.ts'
 
+export type { BufferLike } from './buffer.ts'
+
 export const IPV4 = 'IPv4'
 export const IPV6 = 'IPv6'
 
@@ -123,10 +125,15 @@ export const fromLong = (n: number): string => {
   ].join('.')
 }
 
-export const toLong = (ip: string): number =>
-  ip.split('.').reduce((acc, octet) => (acc << 8) + Number(octet), 0) >>> 0
+export const toLong = (ip: string | BufferLike): number =>
+  typeof ip === 'string'
+    ? ip.split('.').reduce((acc, octet) => (acc << 8) + Number(octet), 0) >>> 0
+    : ip.length === 4
+      ? (ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3] >>> 0
+      : -1
 
-export const toString = (buff: BufferLike, offset = 0, length?: number): string => {
+export const toString = (buff: BufferLike | number, offset = 0, length?: number): string => {
+  if (typeof buff === 'number') buff = toBuffer(buff)
   const o = ~~offset
   const l = length || (buff.length - offset)
 
@@ -145,7 +152,9 @@ export const toString = (buff: BufferLike, offset = 0, length?: number): string 
   throw new Error('Invalid buffer length for IP address')
 }
 
-export const toBuffer = (ip: string, buff?: BufferLike, offset = 0): BufferLike => {
+export const toBuffer = (ip: string | number, buff?: BufferLike, offset = 0): BufferLike => {
+  if (typeof ip === 'number') ip = fromLong(ip)
+
   offset = ~~offset
 
   if (isV4Format(ip)) {
@@ -233,7 +242,7 @@ type Subnet = {
   subnetMaskLength: number
   numHosts: number
   length: number
-  contains(ip: string): boolean
+  contains(ip: string | BufferLike | number): boolean
 }
 
 export const subnet = (addr: string, smask: string): Subnet => {
@@ -260,18 +269,26 @@ export const subnet = (addr: string, smask: string): Subnet => {
   const lastAddress = numAddresses <= 2
     ? networkAddress + numAddresses - 1
     : networkAddress + numAddresses - 2
+  const broadcastAddress = networkAddress + numAddresses - 1
 
   return {
     networkAddress:   fromLong(networkAddress),
     firstAddress:     fromLong(firstAddress),
     lastAddress:      fromLong(lastAddress),
-    broadcastAddress: fromLong(networkAddress + numAddresses - 1),
+    broadcastAddress: fromLong(broadcastAddress),
     subnetMask:       smask,
     subnetMaskLength: maskLen,
     numHosts,
     length:           numAddresses,
-    contains(ip: string): boolean {
-      return networkAddress === toLong(mask(ip, smask))
+    contains(ip: string | number | BufferLike): boolean {
+      // return networkAddress === toLong(mask(ip, smask))
+
+      const long =
+        typeof ip === 'number' ? ip
+        : typeof ip === 'string' ? toLong(toBuffer(ip))
+          : toLong(ip)
+
+      return long >= networkAddress && long <= broadcastAddress
     },
   }
 }
@@ -316,29 +333,29 @@ export const or = (a: string, b: string): string => {
 }
 
 export const isEqual = (a: string, b: string): boolean => {
-  let ab = toBuffer(a)
-  let bb = toBuffer(b)
+  let buffA = toBuffer(a)
+  let buffB = toBuffer(b)
 
   // same protocol
-  if (ab.length === bb.length) {
-    for (let i = 0; i < ab.length; i++) {
-      if (ab[i] !== bb[i]) return false
+  if (buffA.length === buffB.length) {
+    for (let i = 0; i < buffA.length; i++) {
+      if (buffA[i] !== buffB[i]) return false
     }
     return true
   }
 
   // ensure ab is IPv4 and bb is IPv6
-  if (bb.length === 4) [ab, bb] = [bb, ab]
+  if (buffB.length === 4) [buffA, buffB] = [buffB, buffA]
 
   // first 10 bytes must be zero
-  for (let i = 0; i < 10; i++) if (bb[i] !== 0) return false
+  for (let i = 0; i < 10; i++) if (buffB[i] !== 0) return false
 
   // next 2 bytes must be either 0x0000 or 0xffff (::ffff:ipv4)
-  const prefix = bb.readUInt16BE(10)
+  const prefix = buffB.readUInt16BE(10)
   if (prefix !== 0 && prefix !== 0xffff) return false
 
   // last 4 bytes must match IPv4 buffer
-  for (let i = 0; i < 4; i++) if (ab[i] !== bb[i + 12]) return false
+  for (let i = 0; i < 4; i++) if (buffA[i] !== buffB[i + 12]) return false
 
   return true
 }
