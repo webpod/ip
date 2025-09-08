@@ -19,9 +19,9 @@ export declare const ip: {
     isLoopback: (addr: string | number) => boolean;
     loopback: (family?: string | number) => "127.0.0.1" | "fe80::1";
     fromLong: (n: number) => string;
-    toLong: (ip: string) => number;
-    toString: (buff: import("./buffer.ts").BufferLike, offset?: number, length?: number) => string;
-    toBuffer: (ip: string, buff?: import("./buffer.ts").BufferLike, offset?: number) => import("./buffer.ts").BufferLike;
+    toLong: (ip: string | core.BufferLike) => number;
+    toString: (buff: core.BufferLike | number, offset?: number, length?: number) => string;
+    toBuffer: (ip: string | number, buff?: core.BufferLike, offset?: number) => core.BufferLike;
     fromPrefixLen: (prefixlen: number, family?: string | number) => string;
     mask: (addr: string, maskStr: string) => string;
     subnet: (addr: string, smask: string) => {

@@ -127,8 +127,9 @@ var fromLong = (n) => {
     n & 255
   ].join(".");
 };
-var toLong = (ip) => ip.split(".").reduce((acc, octet) => (acc << 8) + Number(octet), 0) >>> 0;
+var toLong = (ip) => typeof ip === "string" ? ip.split(".").reduce((acc, octet) => (acc << 8) + Number(octet), 0) >>> 0 : ip.length === 4 ? (ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3] >>> 0 : -1;
 var toString = (buff, offset = 0, length) => {
+  if (typeof buff === "number") buff = toBuffer(buff);
   const o = ~~offset;
   const l = length || buff.length - offset;
   if (l === 4)
@@ -138,6 +139,7 @@ var toString = (buff, offset = 0, length) => {
   throw new Error("Invalid buffer length for IP address");
 };
 var toBuffer = (ip, buff, offset = 0) => {
+  if (typeof ip === "number") ip = fromLong(ip);
   offset = ~~offset;
   if (isV4Format(ip)) {
     const res = buff || Buffer.alloc(offset + 4);
@@ -215,17 +217,19 @@ var subnet = (addr, smask) => {
   const numHosts = numAddresses <= 2 ? numAddresses : numAddresses - 2;
   const firstAddress = numAddresses <= 2 ? networkAddress : networkAddress + 1;
   const lastAddress = numAddresses <= 2 ? networkAddress + numAddresses - 1 : networkAddress + numAddresses - 2;
+  const broadcastAddress = networkAddress + numAddresses - 1;
   return {
     networkAddress: fromLong(networkAddress),
     firstAddress: fromLong(firstAddress),
     lastAddress: fromLong(lastAddress),
-    broadcastAddress: fromLong(networkAddress + numAddresses - 1),
+    broadcastAddress: fromLong(broadcastAddress),
     subnetMask: smask,
     subnetMaskLength: maskLen,
     numHosts,
     length: numAddresses,
     contains(ip) {
-      return networkAddress === toLong(mask(ip, smask));
+      const long = typeof ip === "number" ? ip : typeof ip === "string" ? toLong(toBuffer(ip)) : toLong(ip);
+      return long >= networkAddress && long <= broadcastAddress;
     }
   };
 };
@@ -256,19 +260,19 @@ var or = (a, b) => {
   return toString(buffA);
 };
 var isEqual = (a, b) => {
-  let ab = toBuffer(a);
-  let bb = toBuffer(b);
-  if (ab.length === bb.length) {
-    for (let i = 0; i < ab.length; i++) {
-      if (ab[i] !== bb[i]) return false;
+  let buffA = toBuffer(a);
+  let buffB = toBuffer(b);
+  if (buffA.length === buffB.length) {
+    for (let i = 0; i < buffA.length; i++) {
+      if (buffA[i] !== buffB[i]) return false;
     }
     return true;
   }
-  if (bb.length === 4) [ab, bb] = [bb, ab];
-  for (let i = 0; i < 10; i++) if (bb[i] !== 0) return false;
-  const prefix = bb.readUInt16BE(10);
+  if (buffB.length === 4) [buffA, buffB] = [buffB, buffA];
+  for (let i = 0; i < 10; i++) if (buffB[i] !== 0) return false;
+  const prefix = buffB.readUInt16BE(10);
   if (prefix !== 0 && prefix !== 65535) return false;
-  for (let i = 0; i < 4; i++) if (ab[i] !== bb[i + 12]) return false;
+  for (let i = 0; i < 4; i++) if (buffA[i] !== buffB[i + 12]) return false;
   return true;
 };
 var isPrivate = (addr) => {

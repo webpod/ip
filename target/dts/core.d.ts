@@ -1,4 +1,5 @@
 import { type BufferLike } from './buffer.ts';
+export type { BufferLike } from './buffer.ts';
 export declare const IPV4 = "IPv4";
 export declare const IPV6 = "IPv6";
 export declare const V4_RE: RegExp;
@@ -19,9 +20,9 @@ declare const V6_LB = "fe80::1";
 export declare const isLoopback: (addr: string | number) => boolean;
 export declare const loopback: (family?: string | number) => typeof V4_LB | typeof V6_LB;
 export declare const fromLong: (n: number) => string;
-export declare const toLong: (ip: string) => number;
-export declare const toString: (buff: BufferLike, offset?: number, length?: number) => string;
-export declare const toBuffer: (ip: string, buff?: BufferLike, offset?: number) => BufferLike;
+export declare const toLong: (ip: string | BufferLike) => number;
+export declare const toString: (buff: BufferLike | number, offset?: number, length?: number) => string;
+export declare const toBuffer: (ip: string | number, buff?: BufferLike, offset?: number) => BufferLike;
 export declare const fromPrefixLen: (prefixlen: number, family?: string | number) => string;
 export declare const mask: (addr: string, maskStr: string) => string;
 type Subnet = {
@@ -44,4 +45,3 @@ export declare const isEqual: (a: string, b: string) => boolean;
 export declare const isPrivate: (addr: string) => boolean;
 export declare const isPublic: (addr: string) => boolean;
 export declare const isSpecial: (addr: string) => boolean;
-export {};
