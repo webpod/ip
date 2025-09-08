@@ -2,13 +2,15 @@
 const {
   __pow,
   __export,
-  __toCommonJS
+  __toCommonJS,
+  __publicField
 } = require('./cjslib.cjs');
 
 
 // src/main/ts/core.ts
 var core_exports = {};
 __export(core_exports, {
+  Address: () => Address,
   IPV4: () => IPV4,
   IPV6: () => IPV6,
   V4_RE: () => V4_RE,
@@ -82,7 +84,7 @@ var getGlobal = function() {
 };
 var Buffer2 = getGlobal().Buffer || FakeBuffer;
 
-// src/main/ts/core.ts
+// src/main/ts/legacy.ts
 var IPV4 = "IPv4";
 var IPV6 = "IPv6";
 var V4_RE = /^(\d{1,3}(\.|$)){4}$/;
@@ -372,8 +374,22 @@ var isSpecial = (addr) => {
   if (isLoopback(a)) return true;
   return SPECIALS.some((sn) => sn.contains(a));
 };
+
+// src/main/ts/extra.ts
+var Address = class {
+  constructor(addr) {
+    __publicField(this, "raw");
+    this.raw = addr;
+  }
+  static parse(addr) {
+    if (addr.includes(":")) {
+    }
+    return /* @__PURE__ */ BigInt("0");
+  }
+};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  Address,
   IPV4,
   IPV6,
   V4_RE,

@@ -156,6 +156,25 @@ describe('core', () => {
     }
   })
 
+  test('toBuffer()', () => {
+    const cases: [string | number, BufferLike][] = [
+      ['127.0.0.1',       Buffer.from([127, 0, 0, 1])],
+      ['0.0.0.1',         Buffer.from([0, 0, 0, 1])],
+      ['::0.0.0.1',       Buffer.from([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1])],
+      ['::ffff:0.0.0.1',  Buffer.from([0,0,0,0, 0,0,0,0, 0,0,255,255, 0,0,0,1])],
+      ['::ff:0.0.0.1',    Buffer.from([0,0,0,0, 0,0,0,0, 0,0,0,255, 0,0,0,1])], // invalid but supported
+      ['::1',             Buffer.from([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1])],
+      ['1::',             Buffer.from([0,1,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0])],
+      ['0001::',          Buffer.from([0,1,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0])],
+      ['1:0:0:0:0:0:0:0', Buffer.from([0,1,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0])],
+      ['1:0:0:0:0:0',     Buffer.from([0,1,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0])], // invalid but supported
+      ['abcd::dcba',      Buffer.from([0xab,0xcd,0,0, 0,0,0,0, 0,0,0,0, 0,0,0xdc,0xba])],
+    ]
+
+    for (const [input, expected] of cases)
+      assert.deepEqual(toBuffer(input), expected, `toBuffer(${input}) === ${expected}`)
+  })
+
   test('toBuffer()/toString()', () => {
     const u = undefined
     const cases: [string | number, Buffer | undefined, number | undefined, number | undefined, string, string?][] = [

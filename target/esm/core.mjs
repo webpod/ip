@@ -1,3 +1,7 @@
+var __defProp = Object.defineProperty;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+
 // src/main/ts/buffer.ts
 var FakeBuffer = {
   alloc: (size, fill = 0) => {
@@ -35,9 +39,9 @@ var getGlobal = function() {
   if (typeof global !== "undefined") return global;
   return Function("return this")();
 };
-var Buffer = getGlobal().Buffer || FakeBuffer;
+var Buffer2 = getGlobal().Buffer || FakeBuffer;
 
-// src/main/ts/core.ts
+// src/main/ts/legacy.ts
 var IPV4 = "IPv4";
 var IPV6 = "IPv6";
 var V4_RE = /^(\d{1,3}(\.|$)){4}$/;
@@ -142,7 +146,7 @@ var toBuffer = (ip, buff, offset = 0) => {
   if (typeof ip === "number") ip = fromLong(ip);
   offset = ~~offset;
   if (isV4Format(ip)) {
-    const res = buff || Buffer.alloc(offset + 4);
+    const res = buff || Buffer2.alloc(offset + 4);
     for (const byte of ip.split("."))
       res[offset++] = +byte & 255;
     return res;
@@ -163,7 +167,7 @@ var toBuffer = (ip, buff, offset = 0) => {
     } else {
       while (sections.length < 8) sections.push("0");
     }
-    const res = buff || Buffer.alloc(offset + 16);
+    const res = buff || Buffer2.alloc(offset + 16);
     for (const sec of sections) {
       const word = parseInt(sec, 16) || 0;
       res[offset++] = word >> 8;
@@ -175,7 +179,7 @@ var toBuffer = (ip, buff, offset = 0) => {
 };
 var fromPrefixLen = (prefixlen, family) => {
   family = prefixlen > 32 ? IPV6 : normalizeFamily(family);
-  const buff = Buffer.alloc(family === IPV6 ? 16 : 4);
+  const buff = Buffer2.alloc(family === IPV6 ? 16 : 4);
   for (let i = 0; i < buff.length; i++) {
     const bits = Math.min(prefixlen, 8);
     prefixlen -= bits;
@@ -186,7 +190,7 @@ var fromPrefixLen = (prefixlen, family) => {
 var mask = (addr, maskStr) => {
   const a = toBuffer(addr);
   const m = toBuffer(maskStr);
-  const out = Buffer.alloc(Math.max(a.length, m.length));
+  const out = Buffer2.alloc(Math.max(a.length, m.length));
   if (a.length === m.length) {
     for (let i = 0; i < a.length; i++) out[i] = a[i] & m[i];
   } else if (m.length === 4) {
@@ -327,7 +331,21 @@ var isSpecial = (addr) => {
   if (isLoopback(a)) return true;
   return SPECIALS.some((sn) => sn.contains(a));
 };
+
+// src/main/ts/extra.ts
+var Address = class {
+  constructor(addr) {
+    __publicField(this, "raw");
+    this.raw = addr;
+  }
+  static parse(addr) {
+    if (addr.includes(":")) {
+    }
+    return /* @__PURE__ */ BigInt("0");
+  }
+};
 export {
+  Address,
   IPV4,
   IPV6,
   V4_RE,

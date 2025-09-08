@@ -58,6 +58,8 @@ var __spreadValues = (a, b) => {
   return a;
 };
 
+var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+
 module.exports = {
   __create,
   __defProp,
@@ -74,5 +76,6 @@ module.exports = {
   __getOwnPropSymbols,
   __propIsEnum,
   __defNormalProp,
-  __spreadValues
+  __spreadValues,
+  __publicField
 };
