@@ -242,7 +242,7 @@ type Subnet = {
   subnetMaskLength: number
   numHosts: number
   length: number
-  contains(ip: string): boolean
+  contains(ip: string | BufferLike | number): boolean
 }
 
 export const subnet = (addr: string, smask: string): Subnet => {

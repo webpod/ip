@@ -33,7 +33,7 @@ export declare const ip: {
         subnetMaskLength: number;
         numHosts: number;
         length: number;
-        contains(ip: string): boolean;
+        contains(ip: string | core.BufferLike | number): boolean;
     };
     cidr: (cidrString: string) => string;
     cidrSubnet: (cidrString: string) => {
@@ -45,7 +45,7 @@ export declare const ip: {
         subnetMaskLength: number;
         numHosts: number;
         length: number;
-        contains(ip: string): boolean;
+        contains(ip: string | core.BufferLike | number): boolean;
     };
     not: (addr: string) => string;
     or: (a: string, b: string) => string;

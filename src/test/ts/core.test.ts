@@ -187,6 +187,12 @@ describe('core', () => {
     assert.throws(() => toBuffer(''), /Error: invalid IP address/)
   })
 
+  test('toLong(), toString(), toBuffer() roundtrip', () => {
+    assert.deepEqual(toLong('127.0.0.1'), toLong(toBuffer('127.0.0.1')))
+    assert.equal(toLong('127.0.0.1'), toLong(toBuffer('127.0.0.1')))
+    assert.equal(toString(toBuffer(2130706433)), toString(2130706433))
+  })
+
   test('fromPrefixLen()', () => {
     const cases: [number, string, (string | number)?][] = [
       [24, '255.255.255.0'],
