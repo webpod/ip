@@ -1,3 +1,8 @@
+## [0.1.0](https://github.com/webpod/ip/compare/v0.0.1...v0.1.0) (2025-09-08)
+
+### Features
+* feat: extend `toLong()`, `toString()` and `subnet.contains()` suitable input types (#8) ([349252b](https://github.com/webpod/ip/commit/349252b913f0aaba7478f5de1d57d2b7e21f24ec))
+
 ## [0.0.1](https://github.com/webpod/ip/compare/v0.0.0...v0.0.1) (2025-09-08)
 
 ### Fixes & improvements
