@@ -39,6 +39,7 @@
     "test:unit": "vitest run --coverage --config ./vitest.config.js",
     "test:jsr": "jsr publish --dry-run",
     "test:audit": "npm audit",
+    "test:workflow": "zizmor .github/workflows -v -p --min-severity=medium",
     "smoke:esm": "node ./src/test/smoke/node.test.mjs",
     "smoke:cjs": "node src/test/smoke/node.test.cjs",
     "smoke:browser": "npx vitest run --config src/test/smoke/vitest.browser.config.js",
