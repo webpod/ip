@@ -82,6 +82,9 @@
     "type": "git",
     "url": "git+https://github.com/webpod/ip.git"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
   "author": "Anton Golub <antongolub@antongolub.com>"
 }
