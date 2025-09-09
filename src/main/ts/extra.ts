@@ -114,18 +114,18 @@ export class Address {
   }
 
   subnet(smask: string): Subnet {
-    const mAddr = Address.fromString(smask)
-    const nw = Address.fromString(this.mask(mAddr)).big
-    const { family, big } = mAddr
+    const maskAddr = Address.fromString(smask)
+    const { family, big: maskBig } = maskAddr
     const bits = family === 4 ? 32 : 128
 
-    // calculate prefix length from mask bigint
-    let maskLen = 0
-    let m = big
-    while (m & (1n << BigInt(bits - 1))) {
-      maskLen++
-      m <<= 1n
-    }
+    // masked network address
+    const nw = this.big & maskBig
+
+    // derive prefix length (assumes contiguous mask)
+    const maskLen = maskBig
+      .toString(2)
+      .padStart(bits, '0')
+      .replace(/0+$/, '').length
 
     const len = 1n << BigInt(bits - maskLen)
     const hosts = len <= 2n ? len : len - 2n
@@ -137,7 +137,7 @@ export class Address {
       networkAddress:   Address.fromNumber(nw, family).toString(),
       firstAddress:     Address.fromNumber(first, family).toString(),
       lastAddress:      Address.fromNumber(last, family).toString(),
-      broadcastAddress: Address.fromNumber(bc, family).toString(),
+      broadcastAddress: Address.fromNumber(bc, family).toString(), // set to last for IPv6 or undefined? RFC 4291
       subnetMask:       smask,
       subnetMaskLength: maskLen,
       numHosts:         hosts,

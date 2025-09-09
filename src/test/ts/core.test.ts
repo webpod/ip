@@ -241,7 +241,7 @@ describe('core', () => {
   })
 
   test('subnet()', () => {
-    const cases: [string, string, Record<string, any>, (string | number | BufferLike)[], (string | number | BufferLike)[]][] = [
+    const cases: [string, string, Record<string, any>, (string | number | BufferLike)[]?, (string | number | BufferLike)[]?][] = [
       ['192.168.1.134', '255.255.255.192', {
         networkAddress: '192.168.1.128',
         firstAddress:   '192.168.1.129',
@@ -265,13 +265,20 @@ describe('core', () => {
         lastAddress:  '192.168.1.134',
         numHosts: 1
       }, ['192.168.1.134'], []],
+
       ['192.168.1.134', '255.255.255.254', {
         firstAddress: '192.168.1.134',
         lastAddress:  '192.168.1.135',
         numHosts: 2
-      }, [], []]
+      }],
+
+      // wtf?
+      ['::1010:1010', '::ffff:0', {
+        firstAddress: '0.0.0.1',
+        lastAddress:  '0.0.255.254',
+      }],
     ]
-    for (const [addr, smask, expected, inside, out] of cases) {
+    for (const [addr, smask, expected, inside = [], out = []] of cases) {
       const res = subnet(addr, smask)
       for (const k of Object.keys(expected))
         assert.strictEqual(res[k as keyof typeof res], expected[k], `subnet(${addr}, ${smask}).${k} === ${expected[k]}`)
