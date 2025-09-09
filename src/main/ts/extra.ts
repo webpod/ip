@@ -17,6 +17,17 @@ const OCT_RE = /^0[0-7]+$/
 
 type Family = 4 | 6
 type Raw = string | number | bigint
+type Subnet = {
+  networkAddress: string
+  firstAddress: string
+  lastAddress: string
+  broadcastAddress: string
+  subnetMask: string
+  subnetMaskLength: number
+  numHosts: bigint
+  length: bigint
+  contains(ip: string | number): boolean
+}
 
 export class Address {
   raw!: Raw
@@ -37,8 +48,6 @@ export class Address {
   }
 
   toString(family: Family = this.family, mapped = (family === 6) && (this.family !== family)): string {
-    console.log('!!!tostring() mapped', mapped, 'family', family, 'self.family', this.family)
-
     const { big } = this
     // IPv4
     if (family === 4) {
@@ -47,7 +56,6 @@ export class Address {
         Number((big >> BigInt((3 - i) * 8)) & 0xffn)
       ).join('.')
     }
-
 
     // IPv6-mapped IPv4 (::ffff:x.x.x.x)
     if (mapped && big < 0x100000000n) {
@@ -74,9 +82,9 @@ export class Address {
     return Number(this.big)
   }
 
-  mask(mask: string): string {
-    const mAddr = Address.fromString(mask)
-    const {family, big} = mAddr
+  mask(mask: Raw | Address): string {
+    const mAddr = Address.from(mask)
+    const { family, big } = mAddr
 
     // same family → pure BigInt AND
     if (this.family === family) {
@@ -105,14 +113,64 @@ export class Address {
     throw new Error('Unsupported family combination')
   }
 
+  subnet(smask: string): Subnet {
+    const mAddr = Address.fromString(smask)
+    const nw = Address.fromString(this.mask(mAddr)).big
+    const { family, big } = mAddr
+    const bits = family === 4 ? 32 : 128
+
+    // calculate prefix length from mask bigint
+    let maskLen = 0
+    let m = big
+    while (m & (1n << BigInt(bits - 1))) {
+      maskLen++
+      m <<= 1n
+    }
+
+    const len = 1n << BigInt(bits - maskLen)
+    const hosts = len <= 2n ? len : len - 2n
+    const first = len <= 2n ? nw : nw + 1n
+    const last = len <= 2n ? nw + (len - 1n) : nw + (len - 2n)
+    const bc = nw + (len - 1n)
+
+    return {
+      networkAddress:   Address.fromNumber(nw, family).toString(),
+      firstAddress:     Address.fromNumber(first, family).toString(),
+      lastAddress:      Address.fromNumber(last, family).toString(),
+      broadcastAddress: Address.fromNumber(bc, family).toString(),
+      subnetMask:       smask,
+      subnetMaskLength: maskLen,
+      numHosts:         hosts,
+      length:           len,
+      contains: (ip: string | number): boolean => {
+        const {big} = Address.from(ip)
+        return big >= nw && big <= bc
+      },
+    }
+  }
+
+  private static create(extra?: Partial<Address>): Address {
+    return Object.assign(Object.create(this.prototype), extra)
+  }
+
   static from(raw: Raw | Address): Address {
     if (raw instanceof Address) return this.create(raw)
     if (typeof raw === 'string') return this.fromString(raw)
     return this.fromNumber(raw)
   }
 
-  private static create(extra?: Partial<Address>): Address {
-    return Object.assign(Object.create(this.prototype), extra)
+  static fromPrefixLen = (prefixlen: number, family?: Family): Address => {
+    family = prefixlen > 32 ? 6 : family
+    const bits = family === 6 ? 128 : 32
+
+    if (prefixlen < 0 || prefixlen > bits)
+      throw new RangeError(`Invalid prefix length for IPv${family}: ${prefixlen}`)
+
+    const big = prefixlen === 0
+      ? 0n
+      : (~0n << BigInt(bits - prefixlen)) & ((1n << BigInt(bits)) - 1n)
+
+    return this.fromNumber(big)
   }
 
   private static fromNumber(n: number | bigint, fam?: Family): Address {
