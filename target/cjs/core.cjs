@@ -376,15 +376,75 @@ var isSpecial = (addr) => {
 };
 
 // src/main/ts/extra.ts
-var Address = class {
+var IPV6_LAST = "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff";
+var IPV4_LAST = "255.255.255.255";
+var IPV4_LEN_LIM = IPV4_LAST.length;
+var IPV6_LEN_LIM = IPV6_LAST.length;
+var isHex = /^[0-9a-fA-F]+$/.test;
+var isDecimal = /^\d+$/.test;
+var Address = class _Address {
   constructor(addr) {
     __publicField(this, "raw");
+    __publicField(this, "family");
+    __publicField(this, "big");
+    const { family, big } = _Address.parse(addr);
     this.raw = addr;
+    this.family = family;
+    this.big = big;
   }
-  static parse(addr) {
-    if (addr.includes(":")) {
+  static parse(addr, opts) {
+    if (addr === "::") return { big: /* @__PURE__ */ BigInt("0"), family: 6 };
+    if (addr === "0") return { big: /* @__PURE__ */ BigInt("0"), family: 4 };
+    if (!addr || addr.length > IPV6_LEN_LIM) throw new Error("Invalid address");
+    let family = 6;
+    const [h, t] = addr.split("::", 2);
+    const heads = h ? h.split(":", 8) : [];
+    const tails = t ? t.split(":", 8) : [];
+    const groups = t === void 0 ? heads : [
+      ...heads,
+      ...Array(8 - heads.length - tails.length).fill("0"),
+      ...tails
+    ];
+    const last = groups[groups.length - 1];
+    if (last.includes(".")) {
+      if (heads.length > 1) throw new Error("Invalid address");
+      if (heads.length === 0) {
+        if (tails.length > 2) throw new Error("Invalid address");
+        if (tails.length === 2) {
+          if (tails[0] !== "ffff") throw new Error("Invalid address");
+          groups[5] = "ffff";
+        }
+      } else {
+        family = 4;
+        groups.length = 8;
+        groups.fill("0");
+      }
+      const [g6, g7] = this.ipv4ToGroups(last);
+      groups[6] = g6;
+      groups[7] = g7;
     }
-    return /* @__PURE__ */ BigInt("0");
+    if (groups.length !== 8 || groups.includes("")) throw new Error("Invalid address");
+    const big = groups.reduce(
+      (acc, part) => {
+        if (part.length > 4 || !isHex(part)) throw new Error("Invalid address");
+        return (acc << /* @__PURE__ */ BigInt("16")) + BigInt(parseInt(part, 16));
+      },
+      /* @__PURE__ */ BigInt("0")
+    );
+    return { family, big };
+  }
+  static ipv4ToGroups(ipv4) {
+    const groups = ipv4.split(".");
+    if (groups.length !== 4) throw new Error("Invalid IPv4");
+    const nums = groups.map((p) => {
+      const n = +p;
+      if (n < 0 || n > 255 || !isDecimal(p)) throw new Error("Invalid IPv4");
+      return n;
+    });
+    return [
+      (nums[0] << 8 | nums[1]).toString(16),
+      (nums[2] << 8 | nums[3]).toString(16)
+    ];
   }
 };
 // Annotate the CommonJS export names for ESM import in node:

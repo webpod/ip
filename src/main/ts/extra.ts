@@ -1,14 +1,19 @@
-import { V4_RE } from './legacy.ts'
-
 const IPV6_LAST = 'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff'
 const IPV4_LAST= '255.255.255.255'
 const IPV4_LEN_LIM = IPV4_LAST.length
 const IPV6_LEN_LIM = IPV6_LAST.length
-const IPV4_BIG_LIM = 4294967295n
-const IPV6_BIG_LIM = 340282366920938463463374607431768211455n
-const IPV6_NULL = '::'
+const IPV4_LIM = 4294967295
 
-const onlydigits = (s: string) => /^\d+$/.test(s)
+const HEX_RE = /^[0-9a-fA-F]+$/
+const HEXX_RE = /^0x[0-9a-f]+$/
+const DEC_RE = /^(0|[1-9]\d*)$/
+const OCT_RE = /^0[0-7]+$/
+
+type Family = 4 | 6
+export type ParsedAddress = {
+  family: Family
+  big: bigint
+}
 
 /**
  * Class to parse and handle IP addresses
@@ -16,12 +21,18 @@ const onlydigits = (s: string) => /^\d+$/.test(s)
 
 export class Address {
   raw: string
+  family: Family
+  big: bigint
   constructor(addr: string) {
+    const {family, big} = Address.parse(addr)
     this.raw = addr
+    this.family = family
+    this.big = big
   }
 
-  static parse(addr: string): bigint {
-    if (addr === '0' || addr === '::' ) return 0n
+  static parse(addr: string, opts?: Record<string, any>): ParsedAddress {
+    if (addr === '::' ) return { big: 0n, family: 6 }
+    if (addr === '0') return { big: 0n, family: 4 }
     if (!addr || addr.length > IPV6_LEN_LIM) throw new Error('Invalid address')
 
     // Compressed zeros (::)
@@ -43,8 +54,9 @@ export class Address {
           groups[5] = 'ffff'
         }
       } else {
-        groups.length = 8
-        groups.fill('0')
+        const long = ipV4ToLong(last)
+        if (long < 0 || long > IPV4_LIM) throw new Error('Invalid address')
+        return {big: BigInt(long), family: 4}
       }
 
       const [g6, g7] = this.ipv4ToGroups(last)
@@ -53,23 +65,23 @@ export class Address {
     }
     if (groups.length !== 8 || groups.includes('')) throw new Error('Invalid address')
 
-
-    const b = groups.reduce(
-      (acc, part) => (acc << 16n) + BigInt(parseInt(part, 16)),
+    const big = groups.reduce(
+      (acc, part) => {
+        if (part.length > 4 || !HEX_RE.test(part)) throw new Error('Invalid address')
+        return (acc << 16n) + BigInt(parseInt(part, 16))
+      },
       0n
     )
-    console.log('groups', groups)
-    console.log('b', b)
 
-    return 0n
-
+    return {family: 6, big}
   }
   static ipv4ToGroups(ipv4: string): string[] {
-    const groups = ipv4.split('.')
+    if (ipv4.length > IPV4_LEN_LIM) throw new Error('Invalid IPv4')
+    const groups = ipv4.split('.', 5)
     if (groups.length !== 4) throw new Error('Invalid IPv4')
     const nums = groups.map(p => {
       const n = +p
-      if (n < 0 || n > 255 || !onlydigits(p)) throw new Error('Invalid IPv4')
+      if (n < 0 || n > 255 || !DEC_RE.test(p)) throw new Error('Invalid IPv4')
       return n
     })
     return [
@@ -77,4 +89,33 @@ export class Address {
       ((nums[2] << 8) | nums[3]).toString(16),
     ]
   }
+}
+
+const ipV4ToLong = (addr: string): number => {
+  const groups = addr.split('.', 5)
+    .map(v => {
+      const radix =
+        HEXX_RE.test(v) ? 16 :
+          DEC_RE.test(v) ? 10 :
+            OCT_RE.test(v) ? 8 : NaN
+      return parseInt(v, radix)
+    })
+  const [g0, g1, g2, g3] = groups
+  const l = groups.length
+
+  if (l > 4 || groups.some(isNaN)) return -1
+
+  if (l === 1)
+    return g0 >>> 0
+
+  if (l === 2 && g0 <= 0xff && g1 <= 0xffffff)
+    return ((g0 << 24) | (g1 & 0xffffff)) >>> 0
+
+  if (l === 3 && g0 <= 0xff && g1 <= 0xff && g2 <= 0xffff)
+    return ((g0 << 24) | (g1 << 16) | (g2 & 0xffff)) >>> 0
+
+  if (groups.every(g => g <= 0xff))
+    return ((g0 << 24) | (g1 << 16) | (g2 << 8) | g3) >>> 0
+
+  return -1
 }

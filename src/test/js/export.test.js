@@ -6,6 +6,7 @@ import * as index from '../../../target/esm/index.mjs'
 //prettier-ignore
 describe('core', () => {
   test('exports', () => {
+    assert.equal(typeof core.Address, 'function', 'core.Address')
     assert.equal(typeof core.IPV4, 'string', 'core.IPV4')
     assert.equal(typeof core.IPV6, 'string', 'core.IPV6')
     assert.equal(typeof core.V4_RE, 'object', 'core.V4_RE')
@@ -43,6 +44,7 @@ describe('core', () => {
 //prettier-ignore
 describe('index', () => {
   test('exports', () => {
+    assert.equal(typeof index.Address, 'function', 'index.Address')
     assert.equal(typeof index.IPV4, 'string', 'index.IPV4')
     assert.equal(typeof index.IPV6, 'string', 'index.IPV6')
     assert.equal(typeof index.V4_RE, 'object', 'index.V4_RE')
@@ -54,6 +56,7 @@ describe('index', () => {
     assert.equal(typeof index.cidr, 'function', 'index.cidr')
     assert.equal(typeof index.cidrSubnet, 'function', 'index.cidrSubnet')
     assert.equal(typeof index.default, 'object', 'index.default')
+    assert.equal(typeof index.default.Address, 'function', 'index.default.Address')
     assert.equal(typeof index.default.IPV4, 'string', 'index.default.IPV4')
     assert.equal(typeof index.default.IPV6, 'string', 'index.default.IPV6')
     assert.equal(typeof index.default.V4_RE, 'object', 'index.default.V4_RE')
@@ -90,6 +93,7 @@ describe('index', () => {
     assert.equal(typeof index.fromLong, 'function', 'index.fromLong')
     assert.equal(typeof index.fromPrefixLen, 'function', 'index.fromPrefixLen')
     assert.equal(typeof index.ip, 'object', 'index.ip')
+    assert.equal(typeof index.ip.Address, 'function', 'index.ip.Address')
     assert.equal(typeof index.ip.IPV4, 'string', 'index.ip.IPV4')
     assert.equal(typeof index.ip.IPV6, 'string', 'index.ip.IPV6')
     assert.equal(typeof index.ip.V4_RE, 'object', 'index.ip.V4_RE')
