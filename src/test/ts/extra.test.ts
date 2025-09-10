@@ -17,9 +17,11 @@ describe('extra', () => {
         for (const [[input, b, o], expected] of cases) {
           const addr = Address.from(input)
           const buf = addr.toBuffer(b, o)
+          const arr = addr.toArray()
 
           test(`Address(${input}).toBuffer(${b}, ${o}) → ${expected.toString('hex')}`, () => {
             assert.deepEqual(buf, expected)
+            assert.deepEqual(arr, [...expected])
           })
         }
       })
@@ -106,6 +108,10 @@ describe('extra', () => {
 
           // Uint8Array inputs
           [new Uint8Array([127, 0, 0, 1]), {big: 2130706433n, family: 4}],
+
+          // 8Array inputs
+          [[127, 0, 0, 1], {big: 2130706433n, family: 4}],
+          [[255, 255, 255, 256], /Invalid/],
 
           // number inputs (assume IPv4)
           [0, {big: 0n, family: 4}],

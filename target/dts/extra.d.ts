@@ -1,6 +1,6 @@
 import { type BufferLike } from './buffer.ts';
 type Family = 4 | 6;
-type Raw = string | number | bigint | BufferLike;
+type Raw = string | number | bigint | BufferLike | Array<number>;
 type AddressSubnet = {
     networkAddress: string;
     firstAddress: string;
@@ -16,7 +16,8 @@ export declare class Address {
     raw: Raw;
     family: Family;
     big: bigint;
-    toBuffer(buff?: BufferLike, offset?: number): Buffer;
+    toBuffer(buff?: BufferLike, offset?: number): BufferLike;
+    toArray(): number[];
     toString(family?: Family, mapped?: boolean): string;
     toLong(): number;
     private static create;

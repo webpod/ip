@@ -399,6 +399,9 @@ var _Address = class _Address {
     }
     return buf;
   }
+  toArray() {
+    return [...this.toBuffer()];
+  }
   toString(family = this.family, mapped = family === 6 && this.family !== family) {
     const { big } = this;
     if (family === 4) {
@@ -531,6 +534,8 @@ var _Address = class _Address {
       throw new Error(`Invalid buffer length ${buf.length}, must be 4 (IPv4) or 16 (IPv6)`);
     let big = /* @__PURE__ */ BigInt("0");
     for (const byte of buf) {
+      if (byte < 0 || byte > 255 || !Number.isInteger(byte))
+        throw new Error(`Invalid byte value ${byte} in buffer`);
       big = big << /* @__PURE__ */ BigInt("8") | BigInt(byte);
     }
     const family = buf.length === 4 ? 4 : 6;

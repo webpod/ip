@@ -14,7 +14,7 @@ const OCT_RE = /^0[0-7]+$/
 // -------------------------------------------------------
 
 type Family = 4 | 6
-type Raw = string | number | bigint | BufferLike
+type Raw = string | number | bigint | BufferLike | Array<number>
 type AddressSubnet = {
   networkAddress: string
   firstAddress: string
@@ -32,7 +32,7 @@ export class Address {
   family!: Family
   big!: bigint
 
-  toBuffer(buff?: BufferLike, offset = 0): Buffer {
+  toBuffer(buff?: BufferLike, offset = 0): BufferLike {
     offset |= 0
     const len = this.family === 4 ? 4 : 16
     const buf = buff ?? Buffer.alloc(len)
@@ -43,6 +43,10 @@ export class Address {
       buf[offset + i] = Number((this.big >> BigInt((len - 1 - i) * 8)) & 0xffn)
     }
     return buf
+  }
+
+  toArray(): number[] {
+    return [...this.toBuffer()]
   }
 
   toString(family: Family = this.family, mapped = (family === 6) && (this.family !== family)): string {
@@ -231,12 +235,14 @@ export class Address {
     return this.create({ raw: n, big, family})
   }
 
-  private static fromBuffer(buf: BufferLike): Address {
+  private static fromBuffer(buf: BufferLike | Array<number>): Address {
     if (buf.length !== 4 && buf.length !== 16)
       throw new Error(`Invalid buffer length ${buf.length}, must be 4 (IPv4) or 16 (IPv6)`)
 
     let big = 0n
     for (const byte of buf) {
+      if (byte < 0 || byte > 255 || !Number.isInteger(byte))
+        throw new Error(`Invalid byte value ${byte} in buffer`)
       big = (big << 8n) | BigInt(byte)
     }
 
