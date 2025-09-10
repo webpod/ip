@@ -27,6 +27,7 @@ export declare class Address {
     static cidrSubnet(cidrString: string): AddressSubnet;
     static not(addr: Raw | Address): string;
     static or(addrA: Raw | Address, addrB: Raw | Address): string;
+    static isEqual(addrA: Raw | Address, addrB: Raw | Address): boolean;
     static fromPrefixLen: (prefixlen: number, family?: Family) => Address;
     private static fromNumber;
     private static fromString;

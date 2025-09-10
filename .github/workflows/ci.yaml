@@ -59,7 +59,8 @@ jobs:
   release:
     name: Release ${{ github.ref }}
     needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'turned-off-temporary'
     runs-on: ubuntu-latest
     permissions:
       checks: read

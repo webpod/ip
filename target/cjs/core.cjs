@@ -509,6 +509,15 @@ var _Address = class _Address {
     const resultBig = ipv6.big | ipv4.big;
     return _Address.fromNumber(resultBig, 6).toString();
   }
+  static isEqual(addrA, addrB) {
+    const a = _Address.from(addrA);
+    const b = _Address.from(addrB);
+    if (a.family === b.family) return a.big === b.big;
+    const v4 = a.family === 4 ? a : b;
+    const v6 = a.family === 6 ? a : b;
+    if (v6.big === v4.big) return true;
+    return v6.big === (/* @__PURE__ */ BigInt("0xffff") << /* @__PURE__ */ BigInt("32") | v4.big);
+  }
   static fromNumber(n, fam) {
     const big = BigInt(n);
     if (big < /* @__PURE__ */ BigInt("0")) throw new Error("Invalid address");

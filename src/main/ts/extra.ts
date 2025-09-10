@@ -162,14 +162,14 @@ export class Address {
     return this.subnet(...this.parseCidr(cidrString))
   }
 
-  static not (addr: Raw | Address): string {
+  static not(addr: Raw | Address): string {
     const { big, family } = Address.from(addr)
     const bits = family === 4 ? 32 : 128
     const mask = (1n << BigInt(bits)) - 1n
     return Address.fromNumber(~big & mask, family).toString()
   }
 
-  static or (addrA: Raw | Address, addrB: Raw | Address): string {
+  static or(addrA: Raw | Address, addrB: Raw | Address): string {
     const a = Address.from(addrA)
     const b = Address.from(addrB)
 
@@ -331,6 +331,6 @@ export class Address {
 }
 
 // -------------------------------------------------------
-// Legacy API
+// Legacy compatibility API
 // -------------------------------------------------------
 
