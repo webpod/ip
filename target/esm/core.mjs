@@ -333,10 +333,8 @@ var isSpecial = (addr) => {
 };
 
 // src/main/ts/extra.ts
-var IPV6_LAST = "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff";
-var IPV4_LAST = "255.255.255.255";
-var IPV4_LEN_LIM = IPV4_LAST.length;
-var IPV6_LEN_LIM = IPV6_LAST.length;
+var IPV4_LEN_LIM = 4 * 3 + 3;
+var IPV6_LEN_LIM = 4 * 8 + 7;
 var IPV4_LIM = 4294967295;
 var HEX_RE = /^[0-9a-fA-F]+$/;
 var HEXX_RE = /^0x[0-9a-f]+$/;
@@ -385,47 +383,55 @@ var _Address = class _Address {
     if (this.big > /* @__PURE__ */ BigInt("0xffffffff")) throw new Error("Address is wider than IPv4");
     return Number(this.big);
   }
-  mask(mask2) {
-    const mAddr = _Address.from(mask2);
-    const { family, big } = mAddr;
-    if (this.family === family) {
-      const bits = this.family === 4 ? 32 : 128;
-      const maskBig = big & (/* @__PURE__ */ BigInt("1") << BigInt(bits)) - /* @__PURE__ */ BigInt("1");
-      const masked = this.big & maskBig;
-      return _Address.fromNumber(masked, this.family).toString();
+  static create(extra) {
+    return Object.assign(Object.create(this.prototype), extra);
+  }
+  static from(raw) {
+    if (raw instanceof _Address) return this.create(raw);
+    if (typeof raw === "string") return this.fromString(raw);
+    return this.fromNumber(raw);
+  }
+  static mask(addr, mask2) {
+    const a = _Address.from(addr);
+    const m = _Address.from(mask2);
+    if (a.family === m.family) {
+      const bits = a.family === 4 ? 32 : 128;
+      const maskBig = m.big & (/* @__PURE__ */ BigInt("1") << BigInt(bits)) - /* @__PURE__ */ BigInt("1");
+      const masked = a.big & maskBig;
+      return _Address.fromNumber(masked, a.family).toString();
     }
-    if (this.family === 6 && family === 4) {
-      const low32 = this.big & /* @__PURE__ */ BigInt("0xffffffff");
-      const maskedLow = low32 & mAddr.big;
-      const masked = this.big & ~/* @__PURE__ */ BigInt("0xffffffff") | maskedLow;
-      return _Address.fromNumber(masked, this.family).toString();
+    if (a.family === 6 && m.family === 4) {
+      const low32 = a.big & /* @__PURE__ */ BigInt("0xffffffff");
+      const maskedLow = low32 & m.big;
+      const masked = a.big & ~/* @__PURE__ */ BigInt("0xffffffff") | maskedLow;
+      return _Address.fromNumber(masked, a.family).toString();
     }
-    if (this.family === 4 && family === 6) {
-      const lowMask = big & /* @__PURE__ */ BigInt("0xffffffff");
-      const low = this.big & lowMask;
+    if (a.family === 4 && m.family === 6) {
+      const lowMask = m.big & /* @__PURE__ */ BigInt("0xffffffff");
+      const low = a.big & lowMask;
       const masked = /* @__PURE__ */ BigInt("0xffff") << /* @__PURE__ */ BigInt("32") | low;
-      return _Address.fromNumber(masked, this.family).toString();
+      return _Address.fromNumber(masked, a.family).toString();
     }
     throw new Error("Unsupported family combination");
   }
-  subnet(smask) {
-    const maskAddr = _Address.fromString(smask);
-    const { family, big: maskBig } = maskAddr;
-    const bits = family === 4 ? 32 : 128;
-    const nw = this.big & maskBig;
-    const maskLen = maskBig.toString(2).padStart(bits, "0").replace(/0+$/, "").length;
+  static subnet(addr, smask) {
+    const a = _Address.from(addr);
+    const m = _Address.from(smask);
+    const bits = m.family === 4 ? 32 : 128;
+    const nw = a.big & m.big;
+    const maskLen = m.big.toString(2).padStart(bits, "0").replace(/0+$/, "").length;
     const len = /* @__PURE__ */ BigInt("1") << BigInt(bits - maskLen);
     const hosts = len <= /* @__PURE__ */ BigInt("2") ? len : len - /* @__PURE__ */ BigInt("2");
     const first = len <= /* @__PURE__ */ BigInt("2") ? nw : nw + /* @__PURE__ */ BigInt("1");
     const last = len <= /* @__PURE__ */ BigInt("2") ? nw + (len - /* @__PURE__ */ BigInt("1")) : nw + (len - /* @__PURE__ */ BigInt("2"));
     const bc = nw + (len - /* @__PURE__ */ BigInt("1"));
     return {
-      networkAddress: _Address.fromNumber(nw, family).toString(),
-      firstAddress: _Address.fromNumber(first, family).toString(),
-      lastAddress: _Address.fromNumber(last, family).toString(),
-      broadcastAddress: _Address.fromNumber(bc, family).toString(),
+      networkAddress: _Address.fromNumber(nw, m.family).toString(),
+      firstAddress: _Address.fromNumber(first, m.family).toString(),
+      lastAddress: _Address.fromNumber(last, m.family).toString(),
+      broadcastAddress: _Address.fromNumber(bc, m.family).toString(),
       // set to last for IPv6 or undefined? RFC 4291
-      subnetMask: smask,
+      subnetMask: m.toString(),
       subnetMaskLength: maskLen,
       numHosts: hosts,
       length: len,
@@ -435,13 +441,30 @@ var _Address = class _Address {
       }
     };
   }
-  static create(extra) {
-    return Object.assign(Object.create(this.prototype), extra);
+  static cidr(cidrString) {
+    return this.mask(...this.parseCidr(cidrString));
   }
-  static from(raw) {
-    if (raw instanceof _Address) return this.create(raw);
-    if (typeof raw === "string") return this.fromString(raw);
-    return this.fromNumber(raw);
+  static cidrSubnet(cidrString) {
+    return this.subnet(...this.parseCidr(cidrString));
+  }
+  static not(addr) {
+    const { big, family } = _Address.from(addr);
+    const bits = family === 4 ? 32 : 128;
+    const mask2 = (/* @__PURE__ */ BigInt("1") << BigInt(bits)) - /* @__PURE__ */ BigInt("1");
+    return _Address.fromNumber(~big & mask2, family).toString();
+  }
+  static or(addrA, addrB) {
+    const a = _Address.from(addrA);
+    const b = _Address.from(addrB);
+    if (a.family === b.family) {
+      const bits = a.family === 4 ? 32 : 128;
+      const mask2 = (/* @__PURE__ */ BigInt("1") << BigInt(bits)) - /* @__PURE__ */ BigInt("1");
+      return _Address.fromNumber((a.big | b.big) & mask2, a.family).toString();
+    }
+    const ipv6 = a.family === 6 ? a : b;
+    const ipv4 = a.family === 4 ? a : b;
+    const resultBig = ipv6.big | ipv4.big;
+    return _Address.fromNumber(resultBig, 6).toString();
   }
   static fromNumber(n, fam) {
     const big = BigInt(n);
@@ -472,7 +495,7 @@ var _Address = class _Address {
           groups[5] = "ffff";
         }
       } else {
-        const long = ipV4ToLong(last);
+        const long = this.ipV4ToLong(last);
         if (long < 0 || long > IPV4_LIM) throw new Error("Invalid address");
         return this.create({ big: BigInt(long), family: 4, raw });
       }
@@ -504,34 +527,43 @@ var _Address = class _Address {
       (nums[2] << 8 | nums[3]).toString(16)
     ];
   }
+  static ipV4ToLong(addr) {
+    const groups = addr.split(".", 5).map((v) => {
+      const radix = HEXX_RE.test(v) ? 16 : DEC_RE.test(v) ? 10 : OCT_RE.test(v) ? 8 : NaN;
+      return parseInt(v, radix);
+    });
+    const [g0, g1, g2, g3] = groups;
+    const l = groups.length;
+    if (l > 4 || groups.some(isNaN)) return -1;
+    if (l === 1)
+      return g0 >>> 0;
+    if (l === 2 && g0 <= 255 && g1 <= 16777215)
+      return (g0 << 24 | g1 & 16777215) >>> 0;
+    if (l === 3 && g0 <= 255 && g1 <= 255 && g2 <= 65535)
+      return (g0 << 24 | g1 << 16 | g2 & 65535) >>> 0;
+    if (groups.every((g) => g <= 255))
+      return (g0 << 24 | g1 << 16 | g2 << 8 | g3) >>> 0;
+    return -1;
+  }
 };
 __publicField(_Address, "fromPrefixLen", (prefixlen, family) => {
-  family = prefixlen > 32 ? 6 : family;
-  const bits = family === 6 ? 128 : 32;
-  if (prefixlen < 0 || prefixlen > bits)
-    throw new RangeError(`Invalid prefix length for IPv${family}: ${prefixlen}`);
-  const big = prefixlen === 0 ? /* @__PURE__ */ BigInt("0") : ~/* @__PURE__ */ BigInt("0") << BigInt(bits - prefixlen) & (/* @__PURE__ */ BigInt("1") << BigInt(bits)) - /* @__PURE__ */ BigInt("1");
+  const fam = prefixlen > 32 ? 6 : family;
+  const len = prefixlen | 0;
+  const bits = fam === 6 ? 128 : 32;
+  if (len < 0 || len > bits)
+    throw new RangeError(`Invalid prefix length for IPv${fam}: ${len}`);
+  const big = len === 0 ? /* @__PURE__ */ BigInt("0") : ~/* @__PURE__ */ BigInt("0") << BigInt(bits - len) & (/* @__PURE__ */ BigInt("1") << BigInt(bits)) - /* @__PURE__ */ BigInt("1");
   return _Address.fromNumber(big);
 });
+__publicField(_Address, "parseCidr", (cidr2) => {
+  const chunks = cidr2.split("/", 3);
+  const [ip, prefix] = chunks;
+  if (chunks.length !== 2 || !prefix.length) throw new Error(`Invalid CIDR: ${cidr2}`);
+  const m = _Address.fromPrefixLen(parseInt(prefix, 10));
+  const addr = _Address.fromString(ip);
+  return [addr, m];
+});
 var Address = _Address;
-var ipV4ToLong = (addr) => {
-  const groups = addr.split(".", 5).map((v) => {
-    const radix = HEXX_RE.test(v) ? 16 : DEC_RE.test(v) ? 10 : OCT_RE.test(v) ? 8 : NaN;
-    return parseInt(v, radix);
-  });
-  const [g0, g1, g2, g3] = groups;
-  const l = groups.length;
-  if (l > 4 || groups.some(isNaN)) return -1;
-  if (l === 1)
-    return g0 >>> 0;
-  if (l === 2 && g0 <= 255 && g1 <= 16777215)
-    return (g0 << 24 | g1 & 16777215) >>> 0;
-  if (l === 3 && g0 <= 255 && g1 <= 255 && g2 <= 65535)
-    return (g0 << 24 | g1 << 16 | g2 & 65535) >>> 0;
-  if (groups.every((g) => g <= 255))
-    return (g0 << 24 | g1 << 16 | g2 << 8 | g3) >>> 0;
-  return -1;
-};
 export {
   Address,
   IPV4,

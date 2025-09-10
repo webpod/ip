@@ -7,6 +7,8 @@ import * as index from '../../../target/esm/index.mjs'
 describe('core', () => {
   test('exports', () => {
     assert.equal(typeof core.Address, 'function', 'core.Address')
+    assert.equal(typeof core.Address.fromPrefixLen, 'function', 'core.Address.fromPrefixLen')
+    assert.equal(typeof core.Address.parseCidr, 'function', 'core.Address.parseCidr')
     assert.equal(typeof core.IPV4, 'string', 'core.IPV4')
     assert.equal(typeof core.IPV6, 'string', 'core.IPV6')
     assert.equal(typeof core.V4_RE, 'object', 'core.V4_RE')
@@ -45,6 +47,8 @@ describe('core', () => {
 describe('index', () => {
   test('exports', () => {
     assert.equal(typeof index.Address, 'function', 'index.Address')
+    assert.equal(typeof index.Address.fromPrefixLen, 'function', 'index.Address.fromPrefixLen')
+    assert.equal(typeof index.Address.parseCidr, 'function', 'index.Address.parseCidr')
     assert.equal(typeof index.IPV4, 'string', 'index.IPV4')
     assert.equal(typeof index.IPV6, 'string', 'index.IPV6')
     assert.equal(typeof index.V4_RE, 'object', 'index.V4_RE')

@@ -1,6 +1,7 @@
 import assert from 'node:assert'
 import {test, describe} from 'vitest'
 import { Address } from '../../main/ts/extra.ts'
+import {isEqual} from "../../main/ts";
 
 describe('extra', () => {
   describe('class Address', () => {
@@ -62,6 +63,85 @@ describe('extra', () => {
           })
         }
       })
+    })
+
+    describe('static', () => {
+      describe('from()', () => {
+        const cases: [any, Pick<Address, 'big' | 'family'> | RegExp ][] = [
+          ['', /Invalid address/],
+          ['0', {big: 0n, family: 4}],
+          ['ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffffff', /Invalid address/],
+          [':ff',     /Invalid address/],
+          [':::f',    /Invalid address/],
+          ['f:::f',   /Invalid address/],
+          ['ff:::',   /Invalid address/],
+          ['ff:',     /Invalid address/],
+          ['ff::f:',  /Invalid address/],
+          [':ff:',    /Invalid address/],
+          ['::ff',    {big: 255n, family: 6}],
+          ['f::f',    {big: 77884452878022414427957444938301455n, family: 6}],
+          ['ff::',    {big: 1324035698926381045275276563951124480n, family: 6}],
+          ['ff:ff',    /Invalid address/],
+          ['::ffff:0.0.0.1',      {big: 281470681743361n, family: 6}],
+          ['::ff:0.0.0.1',        /Invalid address/],
+          ['::ffff:ffff:0.0.0.1', /Invalid address/],
+          ['::ffff:0.0.0.256',    /Invalid IPv4/],
+
+          ['0.0.0.1',         {big: 1n, family: 4}],
+          ['1.1.1.1',         {big: 16843009n, family: 4}],
+          ['255.255.255.255', {big:  4294967295n, family: 4}],
+          ['255.255.255.256', /Invalid address/],
+        ]
+
+        for (const [input, expected] of cases) {
+          test(`${input} → ${expected}`, () => {
+            if (expected instanceof RegExp)
+              assert.throws(() => Address.from(input), expected)
+            else {
+              const addr = Address.from(input)
+              assert.equal(addr.big, expected.big)
+              assert.equal(addr.family, expected.family)
+            }
+          })
+        }
+      })
+
+      test('cidr()', () => {
+        const cases: [string, string][] = [
+          ['192.168.1.134/26', '192.168.1.128'],
+          ['2607:f0d0:1002:51::4/56', '2607:f0d0:1002::']
+        ]
+
+        for (const [input, expected] of cases) {
+          const res = Address.cidr(input)
+          assert.strictEqual(res, expected, `cidr(${input}) === ${expected}`)
+        }
+
+        assert.throws(() => Address.cidr(''), /Invalid CIDR/)
+      })
+
+      test('cidrSubnet()', () => {
+        const cases: [string, Record<string, any>][] = [
+          ['192.168.1.134/26', {
+            networkAddress: '192.168.1.128',
+            firstAddress:   '192.168.1.129',
+            lastAddress:    '192.168.1.190',
+            broadcastAddress: '192.168.1.191',
+            subnetMask:     '255.255.255.192',
+            subnetMaskLength: 26,
+            numHosts:      62n,
+            length:        64n,
+          }],
+        ]
+
+        for (const [input, expected] of cases) {
+          const res = Address.cidrSubnet(input)
+          for (const k of Object.keys(expected))
+            assert.strictEqual(res[k as keyof typeof res], expected[k], `cidrSubnet(${input}).${k} === ${expected[k]}`)
+        }
+
+        assert.throws(() => Address.cidrSubnet(''), /Invalid CIDR/)
+      })
 
       describe('mask()', () => {
         const cases: [string, string, string | RegExp][] = [
@@ -75,13 +155,12 @@ describe('extra', () => {
           ['ff::', '', /Invalid address/],
         ]
 
-        for (const [input, mask, expected] of cases) {
-          const addr = Address.from(input)
-          test(`Address(${input}).mask(${mask}) → ${expected}`, () => {
+        for (const [addr, mask, expected] of cases) {
+          test(`Address.mask(${addr}, ${mask}) → ${expected}`, () => {
             if (expected instanceof RegExp)
-              assert.throws(() => addr.mask(mask), expected)
+              assert.throws(() => Address.mask(addr, mask), expected)
             else
-              assert.equal(addr.mask(mask), expected)
+              assert.equal(Address.mask(addr, mask), expected)
           })
         }
       })
@@ -129,7 +208,7 @@ describe('extra', () => {
           }, [], []]
         ]
         for (const [addr, smask, expected, inside, out] of cases) {
-          const res = Address.from(addr).subnet(smask)
+          const res = Address.subnet(addr, smask)
           for (const k of Object.keys(expected))
             assert.strictEqual(res[k as keyof typeof res], expected[k], `subnet(${addr}, ${smask}).${k} === ${expected[k]}`)
 
@@ -137,47 +216,88 @@ describe('extra', () => {
           assert.ok(out.every(a => !res.contains(a)), `subnet(${addr}, ${smask}) does not contain ${out.join(', ')}`)
         }
       })
-    })
 
-    describe('static', () => {
-      describe('from()', () => {
-        const cases: [any, Pick<Address, 'big' | 'family'> | RegExp ][] = [
-          ['', /Invalid address/],
-          ['0', {big: 0n, family: 4}],
-          ['ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffffff', /Invalid address/],
-          [':ff',     /Invalid address/],
-          [':::f',    /Invalid address/],
-          ['f:::f',   /Invalid address/],
-          ['ff:::',   /Invalid address/],
-          ['ff:',     /Invalid address/],
-          ['ff::f:',  /Invalid address/],
-          [':ff:',    /Invalid address/],
-          ['::ff',    {big: 255n, family: 6}],
-          ['f::f',    {big: 77884452878022414427957444938301455n, family: 6}],
-          ['ff::',    {big: 1324035698926381045275276563951124480n, family: 6}],
-          ['ff:ff',    /Invalid address/],
-          ['::ffff:0.0.0.1',      {big: 281470681743361n, family: 6}],
-          ['::ff:0.0.0.1',        /Invalid address/],
-          ['::ffff:ffff:0.0.0.1', /Invalid address/],
-          ['::ffff:0.0.0.256',    /Invalid IPv4/],
+      test('or()', () => {
+        const cases : [string, string, string][] = [
+          // IPv4
+          ['0.0.0.255', '192.168.1.10', '192.168.1.255'],
+          ['10.0.0.1', '1.2.3.4', '11.2.3.5'],
+          ['255.255.255.255', '0.0.0.0', '255.255.255.255'],
 
-          ['0.0.0.1',         {big: 1n, family: 4}],
-          ['1.1.1.1',         {big: 16843009n, family: 4}],
-          ['255.255.255.255', {big:  4294967295n, family: 4}],
-          ['255.255.255.256', /Invalid address/],
+          // IPv6
+          ['::ff', '::1', '::ff'],
+          ['::abcd:dcba:abcd:0', '::1111:1111:0:1111', '::bbdd:ddbb:abcd:1111'],
+          ['ffff:ffff::', '::ffff', 'ffff:ffff::ffff'],
+
+          // IPv4 embedded IPv6 (zero-extension of IPv4)
+          ['::ff', '::abcd:dcba:abcd:dcba', '::abcd:dcba:abcd:dcff'],
+          ['0.0.0.255', '::abcd:dcba:abcd:dcba', '::abcd:dcba:abcd:dcff'],
+          ['192.168.0.1', '::', '::c0a8:1'],  // 192.168.0.1 → 0xc0a80001 → ::c0a8:1
         ]
 
-        for (const [input, expected] of cases) {
-          test(`${input} → ${expected}`, () => {
-            if (expected instanceof RegExp)
-              assert.throws(() => Address.from(input), expected)
-            else {
-              const addr = Address.from(input)
-              assert.equal(addr.big, expected.big)
-              assert.equal(addr.family, expected.family)
-            }
-          })
-        }
+        for (const [a, b, expected] of cases)
+          assert.strictEqual(Address.or(a, b), expected, `or(${a}, ${b}) === ${expected}`)
+      })
+
+      test('not()', () => {
+        const cases: [string, string][] = [
+          // IPv4
+          ['255.255.255.0', '0.0.0.255'],
+          ['255.0.0.0', '0.255.255.255'],
+          ['1.2.3.4', '254.253.252.251'],
+          ['0.0.0.0', '255.255.255.255'],
+          ['255.255.255.255', '0.0.0.0'],
+
+          // IPv6
+          ['::', 'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff'],
+          ['ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff', '::'],
+          ['::ffff:ffff', 'ffff:ffff:ffff:ffff:ffff:ffff::'],
+          ['::abcd:dcba:abcd:dcba', 'ffff:ffff:ffff:ffff:5432:2345:5432:2345'],
+          ['1234:5678::', 'edcb:a987:ffff:ffff:ffff:ffff:ffff:ffff'],
+        ]
+
+        for (const [a, expected] of cases)
+          assert.strictEqual(Address.not(a), expected, `not(${a}) === ${expected}`)
+      })
+
+      test('isEqual()', () => {
+        const cases: [string, string, boolean][] = [
+          // IPv4 / IPv4
+          ['127.0.0.1', '127.0.0.1', true],
+          ['127.0.0.1', '127.0.0.2', false],
+          ['0.0.0.0', '255.255.255.255', false],
+
+          // IPv6 / IPv6
+          ['::1', '::1', true],
+          ['::1', '::2', false],
+          ['ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff',
+            'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff', true],
+
+          // IPv4 / IPv6 zero-extended (::ipv4)
+          ['127.0.0.1', '::7f00:1', true],
+          ['127.0.0.1', '::7f00:2', false],
+          ['192.168.0.1', '::c0a8:1', true],
+
+          // IPv4 / IPv6 IPv4-mapped (::ffff:ipv4)
+          ['127.0.0.1', '::ffff:7f00:1', true],
+          ['127.0.0.1', '::ffff:7f00:2', false],
+          ['192.168.0.1', '::ffff:c0a8:1', true],
+
+          // IPv4-mapped / IPv4-mapped
+          ['::ffff:127.0.0.1', '::ffff:127.0.0.1', true],
+          ['::ffff:127.0.0.1', '::ffff:127.0.0.2', false],
+
+          // IPv4-mapped / plain IPv4
+          ['::ffff:127.0.0.1', '127.0.0.1', true],
+          ['::ffff:192.168.0.1', '192.168.0.2', false],
+
+          // Edge cases
+          ['::', '0.0.0.0', true],       // both all-zero
+          ['::ffff:0.0.0.0', '0.0.0.0', true], // IPv4-mapped zero
+        ]
+
+        for (const [a, b, expected] of cases)
+          assert.equal(Address.isEqual(a, b), expected, `isEqual(${a}, ${b}) === ${expected}`)
       })
 
       describe('fromPrefixLen()', () => {
@@ -193,6 +313,29 @@ describe('extra', () => {
               assert.throws(() => addr.toString(), expected)
             else
               assert.equal(addr.toString(), expected)
+          })
+        }
+      })
+
+      describe('parseCidr()', () => {
+        const cases: [string, [string, string] | RegExp][] = [
+          ['', /Invalid CIDR/],
+          ['0/', /Invalid CIDR/],
+          ['0/0/', /Invalid CIDR/],
+          ['192.168.1.134/26', ['192.168.1.134', '255.255.255.192']],
+          ['::ffff:0/64', ['::ffff:0', 'ffff:ffff:ffff:ffff::']],
+          ['::ffff:192.168.1.134/122', ['::ffff:c0a8:186', 'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffc0']],
+        ]
+
+        for (const [input, expected] of cases) {
+          test(`Address.parseCidr(${input}) → ${expected}`, () => {
+            if (expected instanceof RegExp)
+              assert.throws(() => Address.parseCidr(input), expected)
+            else {
+              const [addr, mask] = Address.parseCidr(input)
+              assert.equal(addr.toString(), expected[0])
+              assert.equal(mask.toString(), expected[1])
+            }
           })
         }
       })

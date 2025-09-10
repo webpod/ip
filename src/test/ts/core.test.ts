@@ -328,10 +328,20 @@ describe('core', () => {
 
   test('or()', () => {
     const cases : [string, string, string][] = [
+      // IPv4
       ['0.0.0.255', '192.168.1.10', '192.168.1.255'],
+      ['10.0.0.1', '1.2.3.4', '11.2.3.5'],
+      ['255.255.255.255', '0.0.0.0', '255.255.255.255'],
+
+      // IPv6
       ['::ff', '::1', '::ff'],
+      ['::abcd:dcba:abcd:0', '::1111:1111:0:1111', '::bbdd:ddbb:abcd:1111'],
+      ['ffff:ffff::', '::ffff', 'ffff:ffff::ffff'],
+
+      // IPv4 embedded IPv6 (zero-extension of IPv4)
       ['::ff', '::abcd:dcba:abcd:dcba', '::abcd:dcba:abcd:dcff'],
       ['0.0.0.255', '::abcd:dcba:abcd:dcba', '::abcd:dcba:abcd:dcff'],
+      ['192.168.0.1', '::', '::c0a8:1'],  // 192.168.0.1 → 0xc0a80001 → ::c0a8:1
     ]
 
     for (const [a, b, expected] of cases)
@@ -340,12 +350,19 @@ describe('core', () => {
 
   test('not()', () => {
     const cases: [string, string][] = [
+      // IPv4
       ['255.255.255.0', '0.0.0.255'],
-      ['255.0.0.0',  '0.255.255.255'],
+      ['255.0.0.0', '0.255.255.255'],
       ['1.2.3.4', '254.253.252.251'],
+      ['0.0.0.0', '255.255.255.255'],
+      ['255.255.255.255', '0.0.0.0'],
+
+      // IPv6
       ['::', 'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff'],
+      ['ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff', '::'],
       ['::ffff:ffff', 'ffff:ffff:ffff:ffff:ffff:ffff::'],
-      ['::abcd:dcba:abcd:dcba', 'ffff:ffff:ffff:ffff:5432:2345:5432:2345']
+      ['::abcd:dcba:abcd:dcba', 'ffff:ffff:ffff:ffff:5432:2345:5432:2345'],
+      ['1234:5678::', 'edcb:a987:ffff:ffff:ffff:ffff:ffff:ffff'],
     ]
 
     for (const [a, expected] of cases)

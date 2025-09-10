@@ -1,9 +1,7 @@
 import { type BufferLike, Buffer } from './buffer.ts'
 
-const IPV6_LAST = 'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff'
-const IPV4_LAST= '255.255.255.255'
-const IPV4_LEN_LIM = IPV4_LAST.length
-const IPV6_LEN_LIM = IPV6_LAST.length
+const IPV4_LEN_LIM = 4 * 3 + 3 // 4 groups of 3dec + 3 dots
+const IPV6_LEN_LIM = 4 * 8 + 7 // 8 groups of 4hex + 7 colons
 const IPV4_LIM = 4294967295 // 2 ** 32
 
 const HEX_RE = /^[0-9a-fA-F]+$/
@@ -17,7 +15,7 @@ const OCT_RE = /^0[0-7]+$/
 
 type Family = 4 | 6
 type Raw = string | number | bigint
-type Subnet = {
+type AddressSubnet = {
   networkAddress: string
   firstAddress: string
   lastAddress: string
@@ -82,47 +80,54 @@ export class Address {
     return Number(this.big)
   }
 
-  mask(mask: Raw | Address): string {
-    const mAddr = Address.from(mask)
-    const { family, big } = mAddr
+  private static create(extra?: Partial<Address>): Address {
+    return Object.assign(Object.create(this.prototype), extra)
+  }
+
+  static from(raw: Raw | Address): Address {
+    if (raw instanceof Address) return this.create(raw)
+    if (typeof raw === 'string') return this.fromString(raw)
+    return this.fromNumber(raw)
+  }
+
+  static mask(addr: Raw | Address, mask: Raw | Address): string {
+    const a = Address.from(addr)
+    const m = Address.from(mask)
 
     // same family → pure BigInt AND
-    if (this.family === family) {
-      const bits = this.family === 4 ? 32 : 128
-      const maskBig = big & ((1n << BigInt(bits)) - 1n)
-      const masked = this.big & maskBig
-      return Address.fromNumber(masked, this.family).toString()
+    if (a.family === m.family) {
+      const bits = a.family === 4 ? 32 : 128
+      const maskBig = m.big & ((1n << BigInt(bits)) - 1n)
+      const masked = a.big & maskBig
+      return Address.fromNumber(masked, a.family).toString()
     }
 
     // IPv6 addr with IPv4 mask → apply low 32 bits
-    if (this.family === 6 && family === 4) {
-      const low32 = this.big & 0xffffffffn
-      const maskedLow = low32 & mAddr.big
-      const masked = (this.big & ~0xffffffffn) | maskedLow
-      return Address.fromNumber(masked, this.family).toString()
+    if (a.family === 6 && m.family === 4) {
+      const low32 = a.big & 0xffffffffn
+      const maskedLow = low32 & m.big
+      const masked = (a.big & ~0xffffffffn) | maskedLow
+      return Address.fromNumber(masked, a.family).toString()
     }
 
     // IPv4 addr with IPv6 mask → expand to ::ffff:ipv4
-    if (this.family === 4 && family === 6) {
-      const lowMask = big & 0xffffffffn
-      const low = this.big & lowMask
+    if (a.family === 4 && m.family === 6) {
+      const lowMask = m.big & 0xffffffffn
+      const low = a.big & lowMask
       const masked = (0xffffn << 32n) | low
-      return Address.fromNumber(masked, this.family).toString()
+      return Address.fromNumber(masked, a.family).toString()
     }
 
     throw new Error('Unsupported family combination')
   }
 
-  subnet(smask: string): Subnet {
-    const maskAddr = Address.fromString(smask)
-    const { family, big: maskBig } = maskAddr
-    const bits = family === 4 ? 32 : 128
+  static subnet(addr: Raw | Address, smask: Raw | Address): AddressSubnet {
+    const a = Address.from(addr)
+    const m = Address.from(smask)
+    const bits = m.family === 4 ? 32 : 128
 
-    // masked network address
-    const nw = this.big & maskBig
-
-    // derive prefix length (assumes contiguous mask)
-    const maskLen = maskBig
+    const nw = a.big & m.big   // masked network address
+    const maskLen = m.big     // derive prefix length (assumes contiguous mask)
       .toString(2)
       .padStart(bits, '0')
       .replace(/0+$/, '').length
@@ -134,11 +139,11 @@ export class Address {
     const bc = nw + (len - 1n)
 
     return {
-      networkAddress:   Address.fromNumber(nw, family).toString(),
-      firstAddress:     Address.fromNumber(first, family).toString(),
-      lastAddress:      Address.fromNumber(last, family).toString(),
-      broadcastAddress: Address.fromNumber(bc, family).toString(), // set to last for IPv6 or undefined? RFC 4291
-      subnetMask:       smask,
+      networkAddress:   Address.fromNumber(nw, m.family).toString(),
+      firstAddress:     Address.fromNumber(first, m.family).toString(),
+      lastAddress:      Address.fromNumber(last, m.family).toString(),
+      broadcastAddress: Address.fromNumber(bc, m.family).toString(), // set to last for IPv6 or undefined? RFC 4291
+      subnetMask:       m.toString(),
       subnetMaskLength: maskLen,
       numHosts:         hosts,
       length:           len,
@@ -149,26 +154,69 @@ export class Address {
     }
   }
 
-  private static create(extra?: Partial<Address>): Address {
-    return Object.assign(Object.create(this.prototype), extra)
+  static cidr(cidrString: string): string  {
+    return this.mask(...this.parseCidr(cidrString))
   }
 
-  static from(raw: Raw | Address): Address {
-    if (raw instanceof Address) return this.create(raw)
-    if (typeof raw === 'string') return this.fromString(raw)
-    return this.fromNumber(raw)
+  static cidrSubnet (cidrString: string): AddressSubnet  {
+    return this.subnet(...this.parseCidr(cidrString))
+  }
+
+  static not (addr: Raw | Address): string {
+    const { big, family } = Address.from(addr)
+    const bits = family === 4 ? 32 : 128
+    const mask = (1n << BigInt(bits)) - 1n
+    return Address.fromNumber(~big & mask, family).toString()
+  }
+
+  static or (addrA: Raw | Address, addrB: Raw | Address): string {
+    const a = Address.from(addrA)
+    const b = Address.from(addrB)
+
+    // same family -> simple OR (mask to family width)
+    if (a.family === b.family) {
+      const bits = a.family === 4 ? 32 : 128
+      const mask = (1n << BigInt(bits)) - 1n
+      return Address.fromNumber((a.big | b.big) & mask, a.family).toString()
+    }
+
+    // mixed families -> zero-extend IPv4 into low 32 bits of IPv6 (NO ::ffff)
+    const ipv6 = a.family === 6 ? a : b
+    const ipv4 = a.family === 4 ? a : b
+
+    const resultBig = ipv6.big | ipv4.big // ipv4.big occupies low 32 bits
+    return Address.fromNumber(resultBig, 6).toString()
+  }
+
+  static isEqual(addrA: Raw | Address, addrB: Raw | Address): boolean {
+    const a = Address.from(addrA)
+    const b = Address.from(addrB)
+
+    // same family: compare directly
+    if (a.family === b.family) return a.big === b.big
+
+    // normalize so A is IPv4, B is IPv6
+    const v4 = a.family === 4 ? a : b
+    const v6 = a.family === 6 ? a : b
+
+    // candidate: plain zero-extended ::ipv4
+    if (v6.big === v4.big) return true
+
+    // candidate: IPv4-mapped ::ffff:ipv4
+    return v6.big === ((0xffffn << 32n) | v4.big)
   }
 
   static fromPrefixLen = (prefixlen: number, family?: Family): Address => {
-    family = prefixlen > 32 ? 6 : family
-    const bits = family === 6 ? 128 : 32
+    const fam = prefixlen > 32 ? 6 : family
+    const len = prefixlen | 0
+    const bits = fam === 6 ? 128 : 32
 
-    if (prefixlen < 0 || prefixlen > bits)
-      throw new RangeError(`Invalid prefix length for IPv${family}: ${prefixlen}`)
+    if (len < 0 || len > bits)
+      throw new RangeError(`Invalid prefix length for IPv${fam}: ${len}`)
 
-    const big = prefixlen === 0
+    const big = len === 0
       ? 0n
-      : (~0n << BigInt(bits - prefixlen)) & ((1n << BigInt(bits)) - 1n)
+      : (~0n << BigInt(bits - len)) & ((1n << BigInt(bits)) - 1n)
 
     return this.fromNumber(big)
   }
@@ -205,7 +253,7 @@ export class Address {
           groups[5] = 'ffff'
         }
       } else {
-        const long = ipV4ToLong(last)
+        const long = this.ipV4ToLong(last)
         if (long < 0 || long > IPV4_LIM) throw new Error('Invalid address')
         return this.create({big: BigInt(long), family: 4, raw})
       }
@@ -227,7 +275,7 @@ export class Address {
     return this.create({family: 6, big, raw})
   }
 
-  static ipv4ToGroups(ipv4: string): string[] {
+  private static ipv4ToGroups(ipv4: string): string[] {
     if (ipv4.length > IPV4_LEN_LIM) throw new Error('Invalid IPv4')
     const groups = ipv4.split('.', 5)
     if (groups.length !== 4) throw new Error('Invalid IPv4')
@@ -241,35 +289,45 @@ export class Address {
       ((nums[2] << 8) | nums[3]).toString(16),
     ]
   }
-}
 
-const ipV4ToLong = (addr: string): number => {
-  const groups = addr.split('.', 5)
-    .map(v => {
-      const radix =
-        HEXX_RE.test(v) ? 16 :
-          DEC_RE.test(v) ? 10 :
-            OCT_RE.test(v) ? 8 : NaN
-      return parseInt(v, radix)
-    })
-  const [g0, g1, g2, g3] = groups
-  const l = groups.length
+  static parseCidr = (cidr: string): [Address, Address] => {
+    const chunks = cidr.split('/', 3)
+    const [ip, prefix] = chunks
+    if (chunks.length !== 2 || !prefix.length) throw new Error(`Invalid CIDR: ${cidr}`)
 
-  if (l > 4 || groups.some(isNaN)) return -1
+    const m = this.fromPrefixLen(parseInt(prefix, 10))
+    const addr = this.fromString(ip)
+    return [addr, m]
+  }
 
-  if (l === 1)
-    return g0 >>> 0
+  private static ipV4ToLong (addr: string): number {
+    const groups = addr.split('.', 5)
+      .map(v => {
+        const radix =
+          HEXX_RE.test(v) ? 16 :
+            DEC_RE.test(v) ? 10 :
+              OCT_RE.test(v) ? 8 : NaN
+        return parseInt(v, radix)
+      })
+    const [g0, g1, g2, g3] = groups
+    const l = groups.length
 
-  if (l === 2 && g0 <= 0xff && g1 <= 0xffffff)
-    return ((g0 << 24) | (g1 & 0xffffff)) >>> 0
+    if (l > 4 || groups.some(isNaN)) return -1
 
-  if (l === 3 && g0 <= 0xff && g1 <= 0xff && g2 <= 0xffff)
-    return ((g0 << 24) | (g1 << 16) | (g2 & 0xffff)) >>> 0
+    if (l === 1)
+      return g0 >>> 0
 
-  if (groups.every(g => g <= 0xff))
-    return ((g0 << 24) | (g1 << 16) | (g2 << 8) | g3) >>> 0
+    if (l === 2 && g0 <= 0xff && g1 <= 0xffffff)
+      return ((g0 << 24) | (g1 & 0xffffff)) >>> 0
 
-  return -1
+    if (l === 3 && g0 <= 0xff && g1 <= 0xff && g2 <= 0xffff)
+      return ((g0 << 24) | (g1 << 16) | (g2 & 0xffff)) >>> 0
+
+    if (groups.every(g => g <= 0xff))
+      return ((g0 << 24) | (g1 << 16) | (g2 << 8) | g3) >>> 0
+
+    return -1
+  }
 }
 
 // -------------------------------------------------------

@@ -1,7 +1,7 @@
 import { type BufferLike } from './buffer.ts';
 type Family = 4 | 6;
 type Raw = string | number | bigint;
-type Subnet = {
+type AddressSubnet = {
     networkAddress: string;
     firstAddress: string;
     lastAddress: string;
@@ -19,13 +19,19 @@ export declare class Address {
     toBuffer(buff?: BufferLike, offset?: number): Buffer;
     toString(family?: Family, mapped?: boolean): string;
     toLong(): number;
-    mask(mask: Raw | Address): string;
-    subnet(smask: string): Subnet;
     private static create;
     static from(raw: Raw | Address): Address;
+    static mask(addr: Raw | Address, mask: Raw | Address): string;
+    static subnet(addr: Raw | Address, smask: Raw | Address): AddressSubnet;
+    static cidr(cidrString: string): string;
+    static cidrSubnet(cidrString: string): AddressSubnet;
+    static not(addr: Raw | Address): string;
+    static or(addrA: Raw | Address, addrB: Raw | Address): string;
     static fromPrefixLen: (prefixlen: number, family?: Family) => Address;
     private static fromNumber;
     private static fromString;
-    static ipv4ToGroups(ipv4: string): string[];
+    private static ipv4ToGroups;
+    static parseCidr: (cidr: string) => [Address, Address];
+    private static ipV4ToLong;
 }
 export {};
