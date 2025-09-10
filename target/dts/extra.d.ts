@@ -1,6 +1,6 @@
 import { type BufferLike } from './buffer.ts';
 type Family = 4 | 6;
-type Raw = string | number | bigint;
+type Raw = string | number | bigint | BufferLike | Array<number>;
 type AddressSubnet = {
     networkAddress: string;
     firstAddress: string;
@@ -10,13 +10,14 @@ type AddressSubnet = {
     subnetMaskLength: number;
     numHosts: bigint;
     length: bigint;
-    contains(ip: string | number): boolean;
+    contains(ip: string | number | Address): boolean;
 };
 export declare class Address {
     raw: Raw;
     family: Family;
     big: bigint;
-    toBuffer(buff?: BufferLike, offset?: number): Buffer;
+    toBuffer(buff?: BufferLike, offset?: number): BufferLike;
+    toArray(): number[];
     toString(family?: Family, mapped?: boolean): string;
     toLong(): number;
     private static create;
@@ -30,6 +31,7 @@ export declare class Address {
     static isEqual(addrA: Raw | Address, addrB: Raw | Address): boolean;
     static fromPrefixLen: (prefixlen: number, family?: Family) => Address;
     private static fromNumber;
+    private static fromBuffer;
     private static fromString;
     private static ipv4ToGroups;
     static parseCidr: (cidr: string) => [Address, Address];
