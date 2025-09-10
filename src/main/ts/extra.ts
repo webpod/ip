@@ -14,7 +14,7 @@ const OCT_RE = /^0[0-7]+$/
 // -------------------------------------------------------
 
 type Family = 4 | 6
-type Raw = string | number | bigint
+type Raw = string | number | bigint | BufferLike
 type AddressSubnet = {
   networkAddress: string
   firstAddress: string
@@ -24,7 +24,7 @@ type AddressSubnet = {
   subnetMaskLength: number
   numHosts: bigint
   length: bigint
-  contains(ip: string | number): boolean
+  contains(ip: string | number | Address): boolean
 }
 
 export class Address {
@@ -87,14 +87,17 @@ export class Address {
   static from(raw: Raw | Address): Address {
     if (raw instanceof Address) return this.create(raw)
     if (typeof raw === 'string') return this.fromString(raw)
-    return this.fromNumber(raw)
+    if (typeof raw === 'number' || typeof raw === 'bigint') return this.fromNumber(raw)
+    if (raw && typeof raw === 'object' && 'length' in raw) return this.fromBuffer(raw)
+
+    throw new Error('Invalid address')
   }
 
   static mask(addr: Raw | Address, mask: Raw | Address): string {
     const a = Address.from(addr)
     const m = Address.from(mask)
 
-    // same family → pure BigInt AND
+    // same family → pure BigInt
     if (a.family === m.family) {
       const bits = a.family === 4 ? 32 : 128
       const maskBig = m.big & ((1n << BigInt(bits)) - 1n)
@@ -207,8 +210,8 @@ export class Address {
   }
 
   static fromPrefixLen = (prefixlen: number, family?: Family): Address => {
-    const fam = prefixlen > 32 ? 6 : family
     const len = prefixlen | 0
+    const fam = len > 32 ? 6 : family
     const bits = fam === 6 ? 128 : 32
 
     if (len < 0 || len > bits)
@@ -226,6 +229,19 @@ export class Address {
     if (big < 0n) throw new Error('Invalid address')
     const family = big > 0xffffffffn ? 6 : (fam || 4)
     return this.create({ raw: n, big, family})
+  }
+
+  private static fromBuffer(buf: BufferLike): Address {
+    if (buf.length !== 4 && buf.length !== 16)
+      throw new Error(`Invalid buffer length ${buf.length}, must be 4 (IPv4) or 16 (IPv6)`)
+
+    let big = 0n
+    for (const byte of buf) {
+      big = (big << 8n) | BigInt(byte)
+    }
+
+    const family = buf.length === 4 ? 4 : 6
+    return Address.fromNumber(big, family)
   }
 
   private static fromString(addr: string): Address {
@@ -306,27 +322,17 @@ export class Address {
         const radix =
           HEXX_RE.test(v) ? 16 :
             DEC_RE.test(v) ? 10 :
-              OCT_RE.test(v) ? 8 : NaN
+              OCT_RE.test(v) ? 8 : -1
         return parseInt(v, radix)
       })
     const [g0, g1, g2, g3] = groups
     const l = groups.length
 
-    if (l > 4 || groups.some(isNaN)) return -1
-
-    if (l === 1)
-      return g0 >>> 0
-
-    if (l === 2 && g0 <= 0xff && g1 <= 0xffffff)
-      return ((g0 << 24) | (g1 & 0xffffff)) >>> 0
-
-    if (l === 3 && g0 <= 0xff && g1 <= 0xff && g2 <= 0xffff)
-      return ((g0 << 24) | (g1 << 16) | (g2 & 0xffff)) >>> 0
-
-    if (groups.every(g => g <= 0xff))
-      return ((g0 << 24) | (g1 << 16) | (g2 << 8) | g3) >>> 0
-
-    return -1
+    return l > 4 || groups.some(isNaN) ? -1 :
+           l === 1 ? g0 :
+           l === 2 && g0 <= 0xff && g1 <= 0xffffff ?             ((g0 << 24) | (g1 & 0xffffff)) >>> 0 :
+           l === 3 && g0 <= 0xff && g1 <= 0xff && g2 <= 0xffff ? ((g0 << 24) | (g1 << 16) | (g2 & 0xffff)) >>> 0 :
+           groups.every(g => g <= 0xff) ?                ((g0 << 24) | (g1 << 16) | (g2 << 8) | g3) >>> 0 : -1
   }
 }
 

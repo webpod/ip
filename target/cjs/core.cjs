@@ -432,7 +432,9 @@ var _Address = class _Address {
   static from(raw) {
     if (raw instanceof _Address) return this.create(raw);
     if (typeof raw === "string") return this.fromString(raw);
-    return this.fromNumber(raw);
+    if (typeof raw === "number" || typeof raw === "bigint") return this.fromNumber(raw);
+    if (raw && typeof raw === "object" && "length" in raw) return this.fromBuffer(raw);
+    throw new Error("Invalid address");
   }
   static mask(addr, mask2) {
     const a = _Address.from(addr);
@@ -524,6 +526,16 @@ var _Address = class _Address {
     const family = big > /* @__PURE__ */ BigInt("0xffffffff") ? 6 : fam || 4;
     return this.create({ raw: n, big, family });
   }
+  static fromBuffer(buf) {
+    if (buf.length !== 4 && buf.length !== 16)
+      throw new Error(`Invalid buffer length ${buf.length}, must be 4 (IPv4) or 16 (IPv6)`);
+    let big = /* @__PURE__ */ BigInt("0");
+    for (const byte of buf) {
+      big = big << /* @__PURE__ */ BigInt("8") | BigInt(byte);
+    }
+    const family = buf.length === 4 ? 4 : 6;
+    return _Address.fromNumber(big, family);
+  }
   static fromString(addr) {
     const raw = addr;
     if (addr === "::") return this.create({ big: /* @__PURE__ */ BigInt("0"), family: 6, raw });
@@ -581,26 +593,17 @@ var _Address = class _Address {
   }
   static ipV4ToLong(addr) {
     const groups = addr.split(".", 5).map((v) => {
-      const radix = HEXX_RE.test(v) ? 16 : DEC_RE.test(v) ? 10 : OCT_RE.test(v) ? 8 : NaN;
+      const radix = HEXX_RE.test(v) ? 16 : DEC_RE.test(v) ? 10 : OCT_RE.test(v) ? 8 : -1;
       return parseInt(v, radix);
     });
     const [g0, g1, g2, g3] = groups;
     const l = groups.length;
-    if (l > 4 || groups.some(isNaN)) return -1;
-    if (l === 1)
-      return g0 >>> 0;
-    if (l === 2 && g0 <= 255 && g1 <= 16777215)
-      return (g0 << 24 | g1 & 16777215) >>> 0;
-    if (l === 3 && g0 <= 255 && g1 <= 255 && g2 <= 65535)
-      return (g0 << 24 | g1 << 16 | g2 & 65535) >>> 0;
-    if (groups.every((g) => g <= 255))
-      return (g0 << 24 | g1 << 16 | g2 << 8 | g3) >>> 0;
-    return -1;
+    return l > 4 || groups.some(isNaN) ? -1 : l === 1 ? g0 : l === 2 && g0 <= 255 && g1 <= 16777215 ? (g0 << 24 | g1 & 16777215) >>> 0 : l === 3 && g0 <= 255 && g1 <= 255 && g2 <= 65535 ? (g0 << 24 | g1 << 16 | g2 & 65535) >>> 0 : groups.every((g) => g <= 255) ? (g0 << 24 | g1 << 16 | g2 << 8 | g3) >>> 0 : -1;
   }
 };
 __publicField(_Address, "fromPrefixLen", (prefixlen, family) => {
-  const fam = prefixlen > 32 ? 6 : family;
   const len = prefixlen | 0;
+  const fam = len > 32 ? 6 : family;
   const bits = fam === 6 ? 128 : 32;
   if (len < 0 || len > bits)
     throw new RangeError(`Invalid prefix length for IPv${fam}: ${len}`);

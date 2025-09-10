@@ -1,7 +1,6 @@
 import assert from 'node:assert'
 import {test, describe} from 'vitest'
 import { Address } from '../../main/ts/extra.ts'
-import {isEqual} from "../../main/ts";
 
 describe('extra', () => {
   describe('class Address', () => {
@@ -67,9 +66,9 @@ describe('extra', () => {
 
     describe('static', () => {
       describe('from()', () => {
-        const cases: [any, Pick<Address, 'big' | 'family'> | RegExp ][] = [
+        const cases: [any, Pick<Address, 'big' | 'family'> | RegExp][] = [
+          // invalid strings
           ['', /Invalid address/],
-          ['0', {big: 0n, family: 4}],
           ['ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffffff', /Invalid address/],
           [':ff',     /Invalid address/],
           [':::f',    /Invalid address/],
@@ -78,27 +77,53 @@ describe('extra', () => {
           ['ff:',     /Invalid address/],
           ['ff::f:',  /Invalid address/],
           [':ff:',    /Invalid address/],
-          ['::ff',    {big: 255n, family: 6}],
-          ['f::f',    {big: 77884452878022414427957444938301455n, family: 6}],
-          ['ff::',    {big: 1324035698926381045275276563951124480n, family: 6}],
-          ['ff:ff',    /Invalid address/],
-          ['::ffff:0.0.0.1',      {big: 281470681743361n, family: 6}],
+          ['ff:ff',   /Invalid address/],
           ['::ff:0.0.0.1',        /Invalid address/],
           ['::ffff:ffff:0.0.0.1', /Invalid address/],
-          ['::ffff:0.0.0.256',    /Invalid IPv4/],
+          ['::ffff:0.0.0.256',    /Invalid/],
+          ['255.255.255.256',     /Invalid/],
 
-          ['0.0.0.1',         {big: 1n, family: 4}],
-          ['1.1.1.1',         {big: 16843009n, family: 4}],
-          ['255.255.255.255', {big:  4294967295n, family: 4}],
-          ['255.255.255.256', /Invalid address/],
+          // valid IPv6
+          ['::',       {big: 0n, family: 6}],
+          ['::1',      {big: 1n, family: 6}],
+          ['::ff',     {big: 255n, family: 6}],
+          ['f::f',     {big: 77884452878022414427957444938301455n, family: 6}],
+          ['ff::',     {big: 1324035698926381045275276563951124480n, family: 6}],
+          ['ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff',
+            {big: (1n << 128n) - 1n, family: 6}],
+          ['::ffff:0.0.0.1', {big: 281470681743361n, family: 6}], // IPv4-mapped
+
+          // valid IPv4
+          ['0',              {big: 0n, family: 4}],
+          ['0.0.0.1',        {big: 1n, family: 4}],
+          ['1.1.1.1',        {big: 16843009n, family: 4}],
+          ['255.255.255.255',{big: 4294967295n, family: 4}],
+
+          // buffer inputs
+          [Buffer.from([0, 0, 0, 1]), {big: 1n, family: 4}],
+          [Buffer.from(new Array(16).fill(0)), {big: 0n, family: 6}],
+          [Buffer.alloc(5), /Invalid buffer length/],
+
+          // Uint8Array inputs
+          [new Uint8Array([127, 0, 0, 1]), {big: 2130706433n, family: 4}],
+
+          // number inputs (assume IPv4)
+          [0, {big: 0n, family: 4}],
+          [4294967295, {big: 4294967295n, family: 4}],
+
+          // bigint inputs (assume IPv4)
+          [1234n, {big: 1234n, family: 4}],
+
+          // Address input (clone)
+          [Address.from(1), {big: 1n, family: 4}],
         ]
 
-        for (const [input, expected] of cases) {
-          test(`${input} → ${expected}`, () => {
-            if (expected instanceof RegExp)
-              assert.throws(() => Address.from(input), expected)
-            else {
-              const addr = Address.from(input)
+        for (const [raw, expected] of cases) {
+          test(`from(${raw})`, () => {
+            if (expected instanceof RegExp) {
+              assert.throws(() => Address.from(raw), expected)
+            } else {
+              const addr = Address.from(raw)
               assert.equal(addr.big, expected.big)
               assert.equal(addr.family, expected.family)
             }
