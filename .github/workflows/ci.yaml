@@ -100,7 +100,7 @@ jobs:
     name: smoke-node${{ matrix.node-version }}
     strategy:
       matrix:
-        node-version: [8, 12, 18, 24]
+        node-version: [10, 12, 18, 24]
     steps:
       - uses: actions/checkout@v5
         with:
