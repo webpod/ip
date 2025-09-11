@@ -1,3 +1,7 @@
+// -------------------------------------------------------
+// Browser compatibility helpers
+// -------------------------------------------------------
+
 export interface BufferLike extends Omit<Uint8Array, 'slice'> {
   slice(start?: number, end?: number): BufferLike
   toString(encoding?: 'hex'): string
@@ -44,7 +48,11 @@ const getGlobal = function() {
 
 export const Buffer = getGlobal().Buffer || FakeBuffer
 
-// node.js 10 compatibility
+
+// -------------------------------------------------------
+// Nodejs.10x polyfills
+// -------------------------------------------------------
+
 export const fromEntries: <K extends PropertyKey, V>(entries: readonly (readonly [K, V])[]) => { [P in K]: V } =
   Object.fromEntries ||
   (<K extends PropertyKey, V>(entries: readonly (readonly [K, V])[]) =>

@@ -411,15 +411,13 @@ export class Address {
 
   static isSpecial(addr: Raw, range?: Special | Special[]): boolean {
     const ip = Address.from(addr)
-    const subnets = !range
-      ? Object.values(SPECIAL_SUBNETS).flat()
-      : (Array.isArray(range) ? range : [range]).flatMap(r => SPECIAL_SUBNETS[r as Special] || [])
+    const subnets = ([] as Subnet[]).concat(...(range
+      ? (Array.isArray(range) ? range : [range]).map(r => SPECIAL_SUBNETS[r as Special] || [])
+      : Object.values(SPECIAL_SUBNETS)))
 
     for (const subnet of subnets) {
-      if (subnet.family !== ip.family) continue
-      if (subnet.contains(ip)) return true
+      if (subnet.family === ip.family && subnet.contains(ip)) return true
     }
-
     return false
   }
 
@@ -440,10 +438,10 @@ const ipv6fySubnet = (c: string) => {
   return [c, `${prefix}/${96 + Number(len)}`]
 }
 
-const SPECIAL_SUBNETS: Record<Special, Subnet[]> = fromEntries(Object.entries(SPECIALS)
-  .map(([cat, cidrs]) => [
+const SPECIAL_SUBNETS: Record<Special, Subnet[]> = fromEntries(
+  Object.entries(SPECIALS).map(([cat, cidrs]) => [
     cat as Special,
-    cidrs.flatMap((c) => ipv6fySubnet(c).map((c) => Address.cidrSubnet(c)))
+    ([] as Subnet[]).concat(...cidrs.map((c) => ipv6fySubnet(c).map((x) => Address.cidrSubnet(x)))),
   ]))
 
 // -------------------------------------------------------

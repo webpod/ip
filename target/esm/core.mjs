@@ -357,10 +357,9 @@ var _Address = class _Address {
   }
   static isSpecial(addr, range) {
     const ip = _Address.from(addr);
-    const subnets = !range ? Object.values(SPECIAL_SUBNETS).flat() : (Array.isArray(range) ? range : [range]).flatMap((r) => SPECIAL_SUBNETS[r] || []);
+    const subnets = [].concat(...range ? (Array.isArray(range) ? range : [range]).map((r) => SPECIAL_SUBNETS[r] || []) : Object.values(SPECIAL_SUBNETS));
     for (const subnet2 of subnets) {
-      if (subnet2.family !== ip.family) continue;
-      if (subnet2.contains(ip)) return true;
+      if (subnet2.family === ip.family && subnet2.contains(ip)) return true;
     }
     return false;
   }
@@ -395,10 +394,12 @@ var ipv6fySubnet = (c) => {
   const prefix = `::ffff:${base}`;
   return [c, `${prefix}/${96 + Number(len)}`];
 };
-var SPECIAL_SUBNETS = fromEntries(Object.entries(SPECIALS).map(([cat, cidrs]) => [
-  cat,
-  cidrs.flatMap((c) => ipv6fySubnet(c).map((c2) => Address.cidrSubnet(c2)))
-]));
+var SPECIAL_SUBNETS = fromEntries(
+  Object.entries(SPECIALS).map(([cat, cidrs]) => [
+    cat,
+    [].concat(...cidrs.map((c) => ipv6fySubnet(c).map((x) => Address.cidrSubnet(x))))
+  ])
+);
 var isPublic = Address.isPublic.bind(Address);
 var isPrivate = Address.isPrivate.bind(Address);
 var isEqual = Address.isEqual.bind(Address);
