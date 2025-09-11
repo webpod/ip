@@ -67,6 +67,76 @@ describe('extra', () => {
     })
 
     describe('static', () => {
+      describe('isSpecial()', () => {
+        const cases: [string, boolean, string?][] = [
+          ['::', true],                // unspecified IPv6
+          ['::1', true],               // IPv6 loopback
+          ['127.0.0.1', true],         // IPv4 loopback
+          ['10.0.0.1', true],          // IPv4 private
+          ['172.16.5.4', true],        // IPv4 private (172.16.0.0/12)
+          ['192.168.1.1', true],       // IPv4 private
+          ['169.254.10.20', true],     // IPv4 link-local (169.254.0.0/16)
+          ['::ffff:192.168.1.1', true],// IPv4-mapped IPv6 private
+          ['fe80::1', true],           // IPv6 link-local (fe80::/10)
+          ['fc00::1', true],           // IPv6 unique-local (fc00::/7)
+          ['ff02::1', true],           // IPv6 multicast (ff00::/8)
+
+          ['1.1.1.1', false],          // public IPv4
+          ['8.8.8.8', false],          // Google DNS IPv4
+          ['2001:4860:4860::8888', false], // Google DNS IPv6
+          ['2400:cb00::1', false],     // Cloudflare IPv6
+          ['::1234:abcd', false],      // generic IPv6, not special
+
+          ['::1', true, 'loopback'],
+          ['127.0.0.1', true, 'loopback'],
+          ['127.0.0.1', false, 'documentation'],
+
+          ['10.1.2.3', true, 'private'],
+          ['172.16.0.5', true, 'private'],
+          ['192.168.100.200', true, 'private'],
+          ['100.64.0.1', true, 'private'],
+          ['fc00::abcd', true, 'private'],
+          ['198.18.0.42', true, 'private'],
+          ['10.0.0.1', false, 'loopback'],
+
+          ['169.254.1.1', true, 'linklocal'],
+          ['fe80::1234', true, 'linklocal'],
+          ['fe80::1', false, 'private'],
+
+          ['224.0.0.1', true, 'multicast'],
+          ['ff02::1', true, 'multicast'],
+          ['ff02::2', true, 'multicast'],
+          ['224.0.0.1', false, 'reserved'],
+
+          ['192.0.2.1', true, 'documentation'],
+          ['198.51.100.42', true, 'documentation'],
+          ['203.0.113.5', true, 'documentation'],
+          ['2001:db8::1', true, 'documentation'],
+          ['192.0.2.1', false, 'private'],
+
+          ['0.0.0.0', true, 'reserved'],
+          ['240.0.0.1', true, 'reserved'],
+          ['255.255.255.255', true, 'reserved'],
+          ['::', true, 'reserved'],
+          ['::ffff:192.0.2.1', true, 'reserved'],
+          ['64:ff9b::1', true, 'reserved'],
+          ['64:ff9b:1::abcd', true, 'reserved'],
+          ['100::1', true, 'reserved'],
+          ['2001::abcd', true, 'reserved'],
+          ['2001:20::1', true, 'reserved'],
+          ['2002::1', true, 'reserved'],
+          ['3fff::1', true, 'reserved'],
+          ['5f00::1', true, 'reserved'],
+          ['0.0.0.1', false, 'private'],
+        ]
+
+        for (const [input, expected, cat] of cases) {
+          test(`Address.isSpecial(${input}, ${cat}) → ${expected}`, () => {
+            assert.equal(Address.isSpecial(input, cat), expected)
+          })
+        }
+      })
+
       describe('from()', () => {
         const cases: [any, Pick<Address, 'big' | 'family'> | RegExp][] = [
           // invalid strings

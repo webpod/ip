@@ -352,22 +352,6 @@ var SPECIALS = [
   "233.252.0.0/24",
   "240.0.0.0/4",
   "255.255.255.255/32"
-  // TODO
-  // '::/128',
-  // '::1/128',
-  // '::ffff:0:0/96',
-  // '64:ff9b::/96',
-  // '64:ff9b:1::/48',
-  // '100::/64',
-  // '2001::/32',
-  // '2001:20::/28',
-  // '2001:db8::/32',
-  // '2002::/16',
-  // '3fff::/20',
-  // '5f00::/16',
-  // 'fc00::/7',
-  // 'fe80::/64',
-  // 'ff00::/8',
 ].map(cidrSubnet);
 var isSpecial = (addr) => {
   const a = normalizeAddress(addr);
@@ -383,6 +367,82 @@ var HEX_RE = /^[0-9a-fA-F]+$/;
 var HEXX_RE = /^0x[0-9a-f]+$/;
 var DEC_RE = /^(0|[1-9]\d*)$/;
 var OCT_RE = /^0[0-7]+$/;
+var SPECIALS2 = {
+  loopback: [
+    "127.0.0.0/8",
+    // IPv4 loopback
+    "::1/128"
+    // IPv6 loopback
+  ],
+  private: [
+    "10.0.0.0/8",
+    // IPv4 private
+    "172.16.0.0/12",
+    // IPv4 private
+    "192.168.0.0/16",
+    // IPv4 private
+    "100.64.0.0/10",
+    // IPv4 CGNAT
+    "fc00::/7",
+    // IPv6 ULA
+    "198.18.0.0/15"
+    // IPv4 benchmarking
+  ],
+  linklocal: [
+    "169.254.0.0/16",
+    // IPv4 link-local
+    "fe80::/64"
+    // IPv6 link-local
+  ],
+  multicast: [
+    "224.0.0.0/4",
+    // IPv4 multicast
+    "ff00::/8"
+    // IPv6 multicast
+  ],
+  documentation: [
+    "192.0.0.0/24",
+    // IPv4 IETF
+    "192.0.2.0/24",
+    // TEST-NET-1
+    "192.88.99.0/24",
+    // IPv4 relay anycast
+    "198.51.100.0/24",
+    // TEST-NET-2
+    "203.0.113.0/24",
+    // TEST-NET-3
+    "2001:db8::/32"
+    // IPv6 docs
+  ],
+  reserved: [
+    "0.0.0.0/8",
+    // IPv4 current-net
+    "240.0.0.0/4",
+    // IPv4 reserved
+    "255.255.255.255/32",
+    // IPv4 broadcast
+    "::/128",
+    // IPv6 unspecified
+    "::ffff:0:0/96",
+    // IPv4-mapped IPv6
+    "64:ff9b::/96",
+    // IPv6 NAT64
+    "64:ff9b:1::/48",
+    // IPv6 NAT64 local
+    "100::/64",
+    // IPv6 discard
+    "2001::/32",
+    // ORCHID
+    "2001:20::/28",
+    // ORCHIDv2
+    "2002::/16",
+    // 6to4
+    "3fff::/20",
+    // IPv6 reserved
+    "5f00::/16"
+    // IPv6 reserved
+  ]
+};
 var _Address = class _Address {
   constructor() {
     __publicField(this, "raw");
@@ -483,6 +543,7 @@ var _Address = class _Address {
       subnetMaskLength: maskLen,
       numHosts: hosts,
       length: len,
+      family: m.family,
       contains: (ip) => {
         const { big } = _Address.from(ip);
         return big >= nw && big <= bc;
@@ -605,6 +666,16 @@ var _Address = class _Address {
     const l = groups.length;
     return l > 4 || groups.some(isNaN) ? -1 : l === 1 ? g0 : l === 2 && g0 <= 255 && g1 <= 16777215 ? (g0 << 24 | g1 & 16777215) >>> 0 : l === 3 && g0 <= 255 && g1 <= 255 && g2 <= 65535 ? (g0 << 24 | g1 << 16 | g2 & 65535) >>> 0 : groups.every((g) => g <= 255) ? (g0 << 24 | g1 << 16 | g2 << 8 | g3) >>> 0 : -1;
   }
+  static isSpecial(addr, range) {
+    var _a;
+    const ip = _Address.from(addr);
+    const subnets = !range ? Object.values(SPECIAL_SUBNETS).flat() : (_a = SPECIAL_SUBNETS[range]) != null ? _a : [];
+    for (const subnet2 of subnets) {
+      if (subnet2.family !== ip.family) continue;
+      if (subnet2.contains(ip)) return true;
+    }
+    return false;
+  }
 };
 __publicField(_Address, "fromPrefixLen", (prefixlen, family) => {
   const len = prefixlen | 0;
@@ -619,11 +690,16 @@ __publicField(_Address, "parseCidr", (cidr2) => {
   const chunks = cidr2.split("/", 3);
   const [ip, prefix] = chunks;
   if (chunks.length !== 2 || !prefix.length) throw new Error(`Invalid CIDR: ${cidr2}`);
-  const m = _Address.fromPrefixLen(parseInt(prefix, 10));
   const addr = _Address.fromString(ip);
+  const m = _Address.fromPrefixLen(parseInt(prefix, 10), addr.family);
   return [addr, m];
 });
 var Address = _Address;
+var fromEntries = Object.fromEntries || ((entries) => entries.reduce((obj, [key, val]) => {
+  obj[key] = val;
+  return obj;
+}, {}));
+var SPECIAL_SUBNETS = fromEntries(Object.entries(SPECIALS2).map(([cat, cidrs]) => [cat, cidrs.map((c) => Address.cidrSubnet(c))]));
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   Address,

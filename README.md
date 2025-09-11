@@ -96,28 +96,17 @@ ip.cidrSubnet('192.168.1.134/26').contains('192.168.1.190') // true
 
 ### Additional features
 ```ts
-// -------------------------------------------------------
-// Strict mode switcher
-// -------------------------------------------------------
-
-ip.isV4Format('255.255.255.256')   // true
-ip.isV6Format('127.0.0.1')         // true
-
-ip.setMode('strict')               // or 'legacy'
-ip.isV4Format('255.255.255.256')   // false
-ip.isV6Format('127.0.0.1')         // false
-
-// new methods are always strict
-ip.isV4('255.255.255.256')         // false
-ip.isV6('127.0.0.1')               // false
-
+import {Address} from '@webpod/ip'
 
 // -------------------------------------------------------
-// Special ranges detection
+// Specific ranges check
 // -------------------------------------------------------
 
-is.isPrivate('198.18.0.0')         // false
-ip.isSpecial('198.18.0.0')         // true
+Address.isSpecial('127.0.0.1')                    // true
+Address.isSpecial('127.0.0.1', 'loopback')        // true
+Address.isSpecial('127.0.0.1', 'documentation')   // false
+
+Address.isSpecial('1.2.3.4')                      // false
 ```
 
 ## License
