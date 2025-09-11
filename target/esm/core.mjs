@@ -295,8 +295,8 @@ var _Address = class _Address {
     if (addr === "::") return this.create({ big: /* @__PURE__ */ BigInt("0"), family: 6, raw });
     if (addr === "0") return this.create({ big: /* @__PURE__ */ BigInt("0"), family: 4, raw });
     if (!addr || addr.length > IPV6_LEN_LIM) throw new Error(`Invalid address: ${addr}`);
-    const [h, t, e] = addr.split("::", 3);
-    if (e) throw new Error(`Invalid address: ${addr}`);
+    const [h, t, _] = addr.split("::", 3);
+    if (_) throw new Error(`Invalid address: ${addr}`);
     const heads = h ? h.split(":", 9) : [];
     const tails = t ? t.split(":", 9) : [];
     const diff = 8 - heads.length - tails.length;
@@ -319,13 +319,11 @@ var _Address = class _Address {
       groups[7] = g7;
     }
     if (groups.length !== 8) throw new Error(`Invalid address: ${addr}`);
-    const big = groups.reduce(
-      (acc, part) => {
-        if (part.length > 4 || !HEX_RE.test(part)) throw new Error(`Invalid address: ${addr}`);
-        return (acc << /* @__PURE__ */ BigInt("16")) + BigInt(parseInt(part, 16));
-      },
-      /* @__PURE__ */ BigInt("0")
-    );
+    let big = /* @__PURE__ */ BigInt("0");
+    for (const part of groups) {
+      if (part.length > 4 || !HEX_RE.test(part)) throw new Error(`Invalid address: ${addr}`);
+      big = (big << /* @__PURE__ */ BigInt("16")) + BigInt(parseInt(part, 16));
+    }
     return this.create({ family: 6, big, raw });
   }
   static ipv4ToGroups(addr) {

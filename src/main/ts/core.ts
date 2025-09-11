@@ -320,15 +320,17 @@ export class Address {
     if (!addr || (addr.length > IPV6_LEN_LIM)) throw new Error(`Invalid address: ${addr}`)
 
     // Compressed zeros (::)
-    const [h, t, e] = addr.split('::', 3)
-    if (e) throw new Error(`Invalid address: ${addr}`)
+    const [h, t, _] = addr.split('::', 3)
+    if (_) throw new Error(`Invalid address: ${addr}`)
 
     const heads = h ? h.split(':', 9) : []
     const tails = t ? t.split(':', 9) : []
     const diff = 8 - heads.length - tails.length
     const single = diff === 7
+
     if (diff < 0 || diff === 0 && t) throw new Error(`Invalid address: ${addr}`)
     if (single && DEC_RE.test(raw)) return Address.fromNumber(raw as `${bigint}`) // single decimal number
+
     const groups = t === undefined ? heads : [
       ...heads,
       ...Array(diff).fill('0'),
@@ -337,7 +339,6 @@ export class Address {
     const last = groups[groups.length - 1]
     if (last.includes('.')) {
       if (single) return this.fromLong(this.normalizeToLong(last))
-
       if (!diff || groups[groups.length - 2] !== 'ffff' || groups.slice(0, -2).some(v => v !== '0'))
         throw new Error(`Invalid address: ${addr}`)
 
@@ -348,13 +349,11 @@ export class Address {
     }
     if (groups.length !== 8) throw new Error(`Invalid address: ${addr}`)
 
-    const big = groups.reduce(
-      (acc, part) => {
-        if (part.length > 4 || !HEX_RE.test(part)) throw new Error(`Invalid address: ${addr}`)
-        return (acc << 16n) + BigInt(parseInt(part, 16))
-      },
-      0n
-    )
+    let big = 0n
+    for (const part of groups) {
+      if (part.length > 4 || !HEX_RE.test(part)) throw new Error(`Invalid address: ${addr}`)
+      big = (big << 16n) + BigInt(parseInt(part, 16))
+    }
 
     return this.create({family: 6, big, raw})
   }
