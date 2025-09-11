@@ -1,10 +1,9 @@
 export * from './legacy.ts';
-import { type BufferLike } from './polyfill.js';
-type SpecialRange = 'loopback' | 'private' | 'linklocal' | 'multicast' | 'documentation' | 'reserved';
-declare const SPECIALS: Record<SpecialRange, string[]>;
+import { type BufferLike } from './polyfill.ts';
+export type Special = 'loopback' | 'private' | 'linklocal' | 'multicast' | 'documentation' | 'reserved' | 'unspecified';
 type Family = 4 | 6;
 type Raw = string | number | bigint | BufferLike | Array<number> | Address;
-type AddressSubnet = {
+type Subnet = {
     family: Family;
     networkAddress: string;
     firstAddress: string;
@@ -27,19 +26,37 @@ export declare class Address {
     private static create;
     static from(raw: Raw): Address;
     static mask(addr: Raw, mask: Raw): string;
-    static subnet(addr: Raw, smask: Raw): AddressSubnet;
+    static subnet(addr: Raw, smask: Raw): Subnet;
     static cidr(cidrString: string): string;
-    static cidrSubnet(cidrString: string): AddressSubnet;
+    static cidrSubnet(cidrString: string): Subnet;
     static not(addr: Raw): string;
     static or(addrA: Raw, addrB: Raw): string;
     static isEqual(addrA: Raw, addrB: Raw): boolean;
-    static fromPrefixLen: (prefixlen: number, family?: Family) => Address;
+    static fromPrefixLen: (prefixlen: number, family?: string | number) => Address;
     private static fromNumber;
+    private static fromLong;
     private static fromBuffer;
     private static fromString;
     private static ipv4ToGroups;
     static parseCidr: (cidr: string) => [Address, Address];
-    private static ipV4ToLong;
-    static isSpecial(addr: Raw, range?: keyof typeof SPECIALS): boolean;
+    static normalizeFamily(family: string | number): Family;
+    static normalizeToLong(addr: string): number;
+    static isSpecial(addr: Raw, range?: Special | Special[]): boolean;
     static isPrivate(addr: Raw): boolean;
+    static isPublic(addr: Raw): boolean;
 }
+export declare const isPublic: typeof Address['isPublic'];
+export declare const isPrivate: typeof Address['isPrivate'];
+export declare const isEqual: typeof Address['isEqual'];
+export declare const mask: typeof Address['mask'];
+export declare const not: typeof Address['not'];
+export declare const or: typeof Address['or'];
+export declare const cidr: typeof Address['cidr'];
+export declare const normalizeToLong: typeof Address['normalizeToLong'];
+export declare function fromPrefixLen(prefixlen: number, family?: string | number): string;
+type LegacySubnet = Omit<Subnet, 'numHosts' | 'length'> & {
+    numHosts: number | bigint;
+    length: number | bigint;
+};
+export declare function subnet(addr: Raw, smask: Raw): LegacySubnet;
+export declare function cidrSubnet(cidrString: string): LegacySubnet;

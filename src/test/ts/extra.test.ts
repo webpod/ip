@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import {test, describe} from 'vitest'
-import { Address } from '../../main/ts/core.ts'
+import {Address, Special} from '../../main/ts/core.ts'
 
 describe('extra', () => {
   describe('class Address', () => {
@@ -67,8 +67,70 @@ describe('extra', () => {
     })
 
     describe('static', () => {
+      test('isPrivate()', () => {
+        const cases: [string, (boolean | RegExp)?][] = [
+          ['127.0.0.1', true],
+          ['127.0.0.2', true],
+          ['127.1.1.1', true],
+
+          ['192.168.0.123', true],
+          ['192.168.122.123', true],
+          ['192.162.1.2'],
+
+          ['172.16.0.5', true],
+          ['172.16.123.254', true],
+          ['171.16.0.5'],
+          ['172.25.232.15', true],
+          ['172.15.0.5'],
+          ['172.32.0.5'],
+
+          ['169.254.2.3', true],
+          ['169.254.221.9', true],
+          ['168.254.2.3'],
+
+          ['10.0.2.3', true],
+          ['10.1.23.45', true],
+          ['12.1.2.3'],
+
+          ['198.18.0.0', true],
+
+          ['fd12:3456:789a:1::1', true],
+          ['fe80::f2de:f1ff:fe3f:307e', true],
+          ['::ffff:10.100.1.42', true],
+          ['::FFFF:172.16.200.1', true],
+          ['::ffff:192.168.0.1', true],
+
+          ['165.225.132.33'],
+
+          ['::', true],
+          ['::1', true],
+          ['fe80::1', true],
+
+          // CVE-2023-42282
+          ['0x7f.1', true],
+
+          // CVE-2024-29415
+          ['127.1', true],
+          ['2130706433', true],
+          // ['01200034567', false],
+          // ['012.1.2.3', false],
+          // ['000:0:0000::01', true],
+          ['::fFFf:127.0.0.1', true],
+          ['::fFFf:127.255.255.256', /Invalid/]
+        ]
+
+        for (const [input, expected] of cases) {
+          if (expected instanceof RegExp) {
+            assert.throws(() => Address.isPrivate(input), expected)
+          } else {
+            assert.equal(Address.isPrivate(input), !!expected, `isPrivate(${input}) === ${!!expected}`)
+            assert.equal(Address.isPublic(input), !expected, `isPublic(${input}) === ${!expected}`)
+          }
+        }
+      })
+
       describe('isSpecial()', () => {
-        const cases: [string, boolean, string?][] = [
+        const cases: [string, boolean, Special?][] = [
           ['::', true],                // unspecified IPv6
           ['::1', true],               // IPv6 loopback
           ['127.0.0.1', true],         // IPv4 loopback

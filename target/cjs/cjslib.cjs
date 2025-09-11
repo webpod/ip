@@ -60,6 +60,12 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
+var __defProps = Object.defineProperties;
+
+var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
+
+var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
+
 module.exports = {
   __defProp,
   __getOwnPropDesc,
@@ -77,5 +83,8 @@ module.exports = {
   __propIsEnum,
   __spreadValues,
   __reExport,
-  __toESM
+  __toESM,
+  __defProps,
+  __getOwnPropDescs,
+  __spreadProps
 };

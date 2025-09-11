@@ -1,10 +1,9 @@
 export * from './legacy.ts'
 
-import { type BufferLike, Buffer, fromEntries } from './polyfill.js'
+import { type BufferLike, Buffer, fromEntries } from './polyfill.ts'
 
 const IPV4_LEN_LIM = 4 * 3 + 3 // 4 groups of 3dec + 3 dots
 const IPV6_LEN_LIM = 4 * 8 + 7 // 8 groups of 4hex + 7 colons
-const IPV4_LIM = 4294967295 // 2 ** 32
 
 const HEX_RE = /^[0-9a-fA-F]+$/
 const HEXX_RE = /^0x[0-9a-f]+$/
@@ -12,8 +11,12 @@ const DEC_RE = /^(0|[1-9]\d*)$/
 const OCT_RE = /^0[0-7]+$/
 
 // https://en.wikipedia.org/wiki/Reserved_IP_addresses
-type SpecialRange = 'loopback' | 'private' | 'linklocal' | 'multicast' | 'documentation' | 'reserved'
-const SPECIALS: Record<SpecialRange, string[]> = {
+export type Special = 'loopback' | 'private' | 'linklocal' | 'multicast' | 'documentation' | 'reserved' | 'unspecified'
+const SPECIALS: Record<Special, string[]> = {
+  unspecified: [
+    '0.0.0.0/8',
+    '::/128',
+  ],
   loopback: [
     '127.0.0.0/8',    // IPv4 loopback
     '::1/128',        // IPv6 loopback
@@ -65,7 +68,7 @@ const SPECIALS: Record<SpecialRange, string[]> = {
 
 type Family = 4 | 6
 type Raw = string | number | bigint | BufferLike | Array<number> | Address
-type AddressSubnet = {
+type Subnet = {
   family: Family
   networkAddress: string
   firstAddress: string
@@ -100,18 +103,20 @@ export class Address {
     return [...this.toBuffer()]
   }
 
-  toString(family: Family = this.family, mapped = (family === 6) && (this.family !== family)): string {
+  toString(family: Family = this.family, mapped?: boolean): string {
+    const fam = Address.normalizeFamily(family)
+    const _mapped = mapped ?? (fam === 6 && this.family !== fam)
     const { big } = this
     // IPv4
-    if (family === 4) {
-      if (big > 0xffffffffn) throw new Error('Address is wider than IPv4')
+    if (fam === 4) {
+      if (big > 0xffffffffn) throw new Error(`Address is wider than IPv4: ${this}`)
       return Array.from({ length: 4 }, (_, i) =>
         Number((big >> BigInt((3 - i) * 8)) & 0xffn)
       ).join('.')
     }
 
     // IPv6-mapped IPv4 (::ffff:x.x.x.x)
-    if (mapped && big < 0x100000000n) {
+    if (_mapped && big < 0x100000000n) {
       const ipv4 = Number(big & 0xffffffffn)
       return `::ffff:${[
         (ipv4 >> 24) & 0xff,
@@ -131,7 +136,7 @@ export class Address {
   }
 
   toLong(): number {
-    if (this.big > 0xffffffffn) throw new Error('Address is wider than IPv4')
+    if (this.big > 0xffffffffn) throw new Error(`Address is wider than IPv4: ${this}`)
     return Number(this.big)
   }
 
@@ -141,11 +146,11 @@ export class Address {
 
   static from(raw: Raw): Address {
     if (raw instanceof Address) return this.create(raw)
-    if (typeof raw === 'string') return this.fromString(raw)
+    if (typeof raw === 'string') return this.fromString(raw.toLowerCase())
     if (typeof raw === 'number' || typeof raw === 'bigint') return this.fromNumber(raw)
     if (raw && typeof raw === 'object' && 'length' in raw) return this.fromBuffer(raw)
 
-    throw new Error('Invalid address')
+    throw new Error(`Invalid address: ${raw}`)
   }
 
   static mask(addr: Raw, mask: Raw): string {
@@ -179,7 +184,7 @@ export class Address {
     throw new Error('Unsupported family combination')
   }
 
-  static subnet(addr: Raw, smask: Raw): AddressSubnet {
+  static subnet(addr: Raw, smask: Raw): Subnet {
     const a = Address.from(addr)
     const m = Address.from(smask)
     const bits = m.family === 4 ? 32 : 128
@@ -217,7 +222,7 @@ export class Address {
     return this.mask(...this.parseCidr(cidrString))
   }
 
-  static cidrSubnet (cidrString: string): AddressSubnet  {
+  static cidrSubnet (cidrString: string): Subnet  {
     return this.subnet(...this.parseCidr(cidrString))
   }
 
@@ -265,9 +270,9 @@ export class Address {
     return v6.big === ((0xffffn << 32n) | v4.big)
   }
 
-  static fromPrefixLen = (prefixlen: number, family?: Family): Address => {
+  static fromPrefixLen = (prefixlen: number, family?: string | number): Address => {
     const len = prefixlen | 0
-    const fam = len > 32 ? 6 : family
+    const fam = this.normalizeFamily(family || (len > 32 ? 6 : 4))
     const bits = fam === 6 ? 128 : 32
 
     if (len < 0 || len > bits)
@@ -280,11 +285,17 @@ export class Address {
     return this.fromNumber(big)
   }
 
-  private static fromNumber(n: number | bigint, fam?: Family): Address {
+  private static fromNumber(n: number | bigint | `${bigint}`, fam?: Family): Address {
     const big = BigInt(n)
-    if (big < 0n) throw new Error('Invalid address')
+    if (big < 0n) throw new Error(`Invalid address: ${n}`)
     const family = big > 0xffffffffn ? 6 : (fam || 4)
     return this.create({ raw: n, big, family})
+  }
+
+  private static fromLong(n: number | bigint | `${bigint}`): Address {
+    const addr = this.fromNumber(n)
+    if (addr.family !== 4) throw new Error(`Invalid address (long): ${n}`)
+    return addr
   }
 
   private static fromBuffer(buf: BufferLike | Array<number>): Address {
@@ -306,7 +317,7 @@ export class Address {
     const raw = addr
     if (addr === '::' ) return this.create({ big: 0n, family: 6, raw })
     if (addr === '0') return this.create({ big: 0n, family: 4, raw })
-    if (!addr || addr.length > IPV6_LEN_LIM) throw new Error('Invalid address')
+    if (!addr || addr.length > IPV6_LEN_LIM) throw new Error(`Invalid address: ${addr}`)
 
     // Compressed zeros (::)
     const [h, t] = addr.split('::', 2)
@@ -319,28 +330,27 @@ export class Address {
     ]
     const last = groups[groups.length - 1]
     if (last.includes('.')) {
-      if (heads.length > 1) throw new Error('Invalid address')
+      if (heads.length > 1) throw new Error(`Invalid address: ${addr}`)
       if (heads.length === 0 ) {
-        if (tails.length > 2) throw new Error('Invalid address')
+        if (tails.length > 2) throw new Error(`Invalid address: ${addr}`)
         if (tails.length === 2) {
-          if (tails[0] !== 'ffff') throw new Error('Invalid address')
+          if (tails[0] !== 'ffff') throw new Error(`Invalid address: ${addr}`)
           groups[5] = 'ffff'
         }
       } else {
-        const long = this.ipV4ToLong(last)
-        if (long < 0 || long > IPV4_LIM) throw new Error('Invalid address')
-        return this.create({big: BigInt(long), family: 4, raw})
+        return this.fromLong(this.normalizeToLong(last))
       }
 
       const [g6, g7] = this.ipv4ToGroups(last)
       groups[6] = g6
       groups[7] = g7
     }
-    if (groups.length !== 8 || groups.includes('')) throw new Error('Invalid address')
+    if (groups.length === 1 && DEC_RE.test(last)) return Address.fromNumber(raw as `${bigint}`) // single decimal number
+    if (groups.length !== 8 || groups.includes('')) throw new Error(`Invalid address: ${addr}`)
 
     const big = groups.reduce(
       (acc, part) => {
-        if (part.length > 4 || !HEX_RE.test(part)) throw new Error('Invalid address')
+        if (part.length > 4 || !HEX_RE.test(part)) throw new Error(`Invalid address: ${addr}`)
         return (acc << 16n) + BigInt(parseInt(part, 16))
       },
       0n
@@ -349,13 +359,13 @@ export class Address {
     return this.create({family: 6, big, raw})
   }
 
-  private static ipv4ToGroups(ipv4: string): string[] {
-    if (ipv4.length > IPV4_LEN_LIM) throw new Error('Invalid IPv4')
-    const groups = ipv4.split('.', 5)
-    if (groups.length !== 4) throw new Error('Invalid IPv4')
+  private static ipv4ToGroups(addr: string): string[] {
+    if (addr.length > IPV4_LEN_LIM) throw new Error(`Invalid address: ${addr}`)
+    const groups = addr.split('.', 5)
+    if (groups.length !== 4) throw new Error(`Invalid address: ${addr}`)
     const nums = groups.map(p => {
       const n = +p
-      if (n < 0 || n > 255 || !DEC_RE.test(p)) throw new Error('Invalid IPv4')
+      if (n < 0 || n > 255 || !DEC_RE.test(p)) throw new Error(`Invalid address: ${addr}`)
       return n
     })
     return [
@@ -374,7 +384,14 @@ export class Address {
     return [addr, m]
   }
 
-  private static ipV4ToLong (addr: string): number {
+  static normalizeFamily(family: string | number): Family {
+    const f = `${family}`.toLowerCase()
+    if (f === '4' || f === 'ipv4') return 4
+    if (f == '6' || f === 'ipv6') return 6
+    throw new Error(`Invalid family: ${family}`)
+  }
+
+  static normalizeToLong(addr: string): number {
     const groups = addr.split('.', 5)
       .map(v => {
         const radix =
@@ -388,16 +405,16 @@ export class Address {
 
     return l > 4 || groups.some(isNaN) ? -1 :
       l === 1 ? g0 :
-        l === 2 && g0 <= 0xff && g1 <= 0xffffff ?             ((g0 << 24) | (g1 & 0xffffff)) >>> 0 :
-          l === 3 && g0 <= 0xff && g1 <= 0xff && g2 <= 0xffff ? ((g0 << 24) | (g1 << 16) | (g2 & 0xffff)) >>> 0 :
-            groups.every(g => g <= 0xff) ?                ((g0 << 24) | (g1 << 16) | (g2 << 8) | g3) >>> 0 : -1
+      l === 2 && g0 <= 0xff && g1 <= 0xffffff ?             ((g0 << 24) | (g1 & 0xffffff)) >>> 0 :
+      l === 3 && g0 <= 0xff && g1 <= 0xff && g2 <= 0xffff ? ((g0 << 24) | (g1 << 16) | (g2 & 0xffff)) >>> 0 :
+      groups.every(g => g <= 0xff) ?                ((g0 << 24) | (g1 << 16) | (g2 << 8) | g3) >>> 0 : -1
   }
 
-  static isSpecial(addr: Raw, range?: keyof typeof SPECIALS): boolean {
+  static isSpecial(addr: Raw, range?: Special | Special[]): boolean {
     const ip = Address.from(addr)
     const subnets = !range
       ? Object.values(SPECIAL_SUBNETS).flat()
-      : SPECIAL_SUBNETS[range] ?? []
+      : (Array.isArray(range) ? range : [range]).flatMap(r => SPECIAL_SUBNETS[r as Special] || [])
 
     for (const subnet of subnets) {
       if (subnet.family !== ip.family) continue
@@ -408,15 +425,56 @@ export class Address {
   }
 
   static isPrivate(addr: Raw) {
-    return this.isSpecial(addr, 'private')
+    return this.isSpecial(addr, ['private', 'linklocal', 'loopback', 'unspecified'])
+  }
+
+  static isPublic(addr: Raw) {
+    return !this.isPrivate(addr)
   }
 }
 
-const SPECIAL_SUBNETS: Record<SpecialRange, AddressSubnet[]> = fromEntries(Object.entries(SPECIALS)
-  .map(([cat, cidrs]) => [cat as SpecialRange, cidrs.map((c) => Address.cidrSubnet(c))]))
+const ipv6fySubnet = (c: string) => {
+  if (c.includes(':')) return [c]
+
+  const [base, len] = c.split('/')
+  const prefix = `::ffff:${base}`
+  return [c, `${prefix}/${96 + Number(len)}`]
+}
+
+const SPECIAL_SUBNETS: Record<Special, Subnet[]> = fromEntries(Object.entries(SPECIALS)
+  .map(([cat, cidrs]) => [
+    cat as Special,
+    cidrs.flatMap((c) => ipv6fySubnet(c).map((c) => Address.cidrSubnet(c)))
+  ]))
 
 // -------------------------------------------------------
-// Legacy compatibility API with ip@2.0.1
+// Legacy compatibility API
 // -------------------------------------------------------
+
+export const isPublic:        typeof Address['isPublic'] = Address.isPublic.bind(Address)
+export const isPrivate:       typeof Address['isPrivate'] = Address.isPrivate.bind(Address)
+export const isEqual:         typeof Address['isEqual'] = Address.isEqual.bind(Address)
+export const mask:            typeof Address['mask'] = Address.mask.bind(Address)
+export const not:             typeof Address['not'] = Address.not.bind(Address)
+export const or:              typeof Address['or'] = Address.or.bind(Address)
+export const cidr:            typeof Address['cidr'] = Address.cidr.bind(Address)
+export const normalizeToLong: typeof Address['normalizeToLong'] = Address.normalizeToLong.bind(Address)
+
+export function fromPrefixLen(prefixlen: number, family?: string | number): string {
+  return Address.fromPrefixLen(prefixlen, family).toString()
+}
+
+type LegacySubnet = Omit<Subnet, 'numHosts' | 'length'> & {
+  numHosts: number | bigint
+  length: number | bigint
+}
+export function subnet(addr: Raw, smask: Raw): LegacySubnet {
+  const sub = Address.subnet(addr, smask)
+  return sub.family === 6 ? sub : {...sub, numHosts: Number(sub.numHosts), length:   Number(sub.length)}
+}
+export function cidrSubnet(cidrString: string): LegacySubnet {
+  const sub = Address.cidrSubnet(cidrString)
+  return sub.family === 6 ? sub : {...sub, numHosts: Number(sub.numHosts), length: Number(sub.length)}
+}
 
 
