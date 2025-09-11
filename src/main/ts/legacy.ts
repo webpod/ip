@@ -1,6 +1,6 @@
-import { Buffer, type BufferLike } from './buffer.ts'
+import { Buffer, type BufferLike } from './polyfill.ts'
 
-export type { BufferLike } from './buffer.ts'
+export type { BufferLike } from './polyfill.ts'
 
 export const IPV4 = 'IPv4'
 export const IPV6 = 'IPv6'

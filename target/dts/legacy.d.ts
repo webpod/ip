@@ -1,5 +1,5 @@
-import { type BufferLike } from './buffer.ts';
-export type { BufferLike } from './buffer.ts';
+import { type BufferLike } from './polyfill.ts';
+export type { BufferLike } from './polyfill.ts';
 export declare const IPV4 = "IPv4";
 export declare const IPV6 = "IPv6";
 export declare const V4_RE: RegExp;

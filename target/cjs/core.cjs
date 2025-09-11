@@ -45,7 +45,7 @@ __export(core_exports, {
 });
 module.exports = __toCommonJS(core_exports);
 
-// src/main/ts/buffer.ts
+// src/main/ts/polyfill.ts
 var FakeBuffer = {
   alloc: (size, fill = 0) => {
     if (size < 0)
@@ -83,6 +83,10 @@ var getGlobal = function() {
   return Function("return this")();
 };
 var Buffer2 = getGlobal().Buffer || FakeBuffer;
+var fromEntries = Object.fromEntries || ((entries) => entries.reduce((obj, [key, val]) => {
+  obj[key] = val;
+  return obj;
+}, {}));
 
 // src/main/ts/legacy.ts
 var IPV4 = "IPv4";
@@ -359,7 +363,7 @@ var isSpecial = (addr) => {
   return SPECIALS.some((sn) => sn.contains(a));
 };
 
-// src/main/ts/extra.ts
+// src/main/ts/core.ts
 var IPV4_LEN_LIM = 4 * 3 + 3;
 var IPV6_LEN_LIM = 4 * 8 + 7;
 var IPV4_LIM = 4294967295;
@@ -695,10 +699,6 @@ __publicField(_Address, "parseCidr", (cidr2) => {
   return [addr, m];
 });
 var Address = _Address;
-var fromEntries = Object.fromEntries || ((entries) => entries.reduce((obj, [key, val]) => {
-  obj[key] = val;
-  return obj;
-}, {}));
 var SPECIAL_SUBNETS = fromEntries(Object.entries(SPECIALS2).map(([cat, cidrs]) => [cat, cidrs.map((c) => Address.cidrSubnet(c))]));
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {

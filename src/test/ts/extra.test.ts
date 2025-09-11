@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import {test, describe} from 'vitest'
-import { Address } from '../../main/ts/extra.ts'
+import { Address } from '../../main/ts/core.ts'
 
 describe('extra', () => {
   describe('class Address', () => {

@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import {test, describe} from 'vitest'
 
-import { FakeBuffer } from '../../main/ts/buffer.ts'
+import { FakeBuffer } from '../../main/ts/polyfill.ts'
 
 describe('buffer', () => {
 

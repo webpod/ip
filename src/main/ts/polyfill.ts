@@ -23,13 +23,13 @@ export const FakeBuffer = {
         return (this as any)[offset] << 8 | (this as any)[offset + 1]
       },
       slice(start?: number, end?: number): BufferLike {
-          const sliced = Uint8Array.prototype.slice.call(this, start, end)
+        const sliced = Uint8Array.prototype.slice.call(this, start, end)
 
-          return Object.assign(sliced, {
-            readUInt16BE: buf.readUInt16BE,
-            slice: buf.slice,
-            toString: buf.toString,
-          }) as BufferLike
+        return Object.assign(sliced, {
+          readUInt16BE: buf.readUInt16BE,
+          slice: buf.slice,
+          toString: buf.toString,
+        }) as BufferLike
       },
       toString(encoding?: 'hex'): string {
         if (encoding !== 'hex')
@@ -51,3 +51,10 @@ const getGlobal = function() {
 }
 
 export const Buffer = getGlobal().Buffer || FakeBuffer
+
+// node.js 10 compatibility
+export const fromEntries = Object.fromEntries || ((entries: [string, any][]) =>
+  entries.reduce((obj, [key, val]) => {
+    obj[key] = val
+    return obj
+  }, {} as Record<string, any>))

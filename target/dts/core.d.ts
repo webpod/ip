@@ -1,2 +1,43 @@
 export * from './legacy.ts';
-export * from './extra.js';
+import { type BufferLike } from './polyfill.js';
+declare const SPECIALS: Record<string, string[]>;
+type Family = 4 | 6;
+type Raw = string | number | bigint | BufferLike | Array<number> | Address;
+type AddressSubnet = {
+    family: Family;
+    networkAddress: string;
+    firstAddress: string;
+    lastAddress: string;
+    broadcastAddress: string;
+    subnetMask: string;
+    subnetMaskLength: number;
+    numHosts: bigint;
+    length: bigint;
+    contains(addr: Raw): boolean;
+};
+export declare class Address {
+    raw: Raw;
+    family: Family;
+    big: bigint;
+    toBuffer(buff?: BufferLike, offset?: number): BufferLike;
+    toArray(): number[];
+    toString(family?: Family, mapped?: boolean): string;
+    toLong(): number;
+    private static create;
+    static from(raw: Raw): Address;
+    static mask(addr: Raw, mask: Raw): string;
+    static subnet(addr: Raw, smask: Raw): AddressSubnet;
+    static cidr(cidrString: string): string;
+    static cidrSubnet(cidrString: string): AddressSubnet;
+    static not(addr: Raw): string;
+    static or(addrA: Raw, addrB: Raw): string;
+    static isEqual(addrA: Raw, addrB: Raw): boolean;
+    static fromPrefixLen: (prefixlen: number, family?: Family) => Address;
+    private static fromNumber;
+    private static fromBuffer;
+    private static fromString;
+    private static ipv4ToGroups;
+    static parseCidr: (cidr: string) => [Address, Address];
+    private static ipV4ToLong;
+    static isSpecial(addr: Raw, range?: keyof typeof SPECIALS): boolean;
+}

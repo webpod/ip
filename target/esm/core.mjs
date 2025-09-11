@@ -2,7 +2,7 @@ var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-// src/main/ts/buffer.ts
+// src/main/ts/polyfill.ts
 var FakeBuffer = {
   alloc: (size, fill = 0) => {
     if (size < 0)
@@ -40,6 +40,10 @@ var getGlobal = function() {
   return Function("return this")();
 };
 var Buffer2 = getGlobal().Buffer || FakeBuffer;
+var fromEntries = Object.fromEntries || ((entries) => entries.reduce((obj, [key, val]) => {
+  obj[key] = val;
+  return obj;
+}, {}));
 
 // src/main/ts/legacy.ts
 var IPV4 = "IPv4";
@@ -316,7 +320,7 @@ var isSpecial = (addr) => {
   return SPECIALS.some((sn) => sn.contains(a));
 };
 
-// src/main/ts/extra.ts
+// src/main/ts/core.ts
 var IPV4_LEN_LIM = 4 * 3 + 3;
 var IPV6_LEN_LIM = 4 * 8 + 7;
 var IPV4_LIM = 4294967295;
@@ -652,10 +656,6 @@ __publicField(_Address, "parseCidr", (cidr2) => {
   return [addr, m];
 });
 var Address = _Address;
-var fromEntries = Object.fromEntries || ((entries) => entries.reduce((obj, [key, val]) => {
-  obj[key] = val;
-  return obj;
-}, {}));
 var SPECIAL_SUBNETS = fromEntries(Object.entries(SPECIALS2).map(([cat, cidrs]) => [cat, cidrs.map((c) => Address.cidrSubnet(c))]));
 export {
   Address,

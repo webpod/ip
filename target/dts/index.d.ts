@@ -2,6 +2,7 @@ import * as core from './core.ts';
 export * from './address.ts';
 export * from './core.ts';
 export declare const ip: {
+    Address: typeof core.Address;
     normalizeFamily(family?: string | number): core.Family;
     IPV4: "IPv4";
     IPV6: "IPv6";
@@ -53,7 +54,6 @@ export declare const ip: {
     isPrivate: (addr: string) => boolean;
     isPublic: (addr: string) => boolean;
     isSpecial: (addr: string) => boolean;
-    Address: typeof core.Address;
     addresses: (name?: string, family?: string) => string[];
     address: (name?: string, family?: string) => string | undefined;
 };
