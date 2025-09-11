@@ -1,6 +1,7 @@
 export * from './legacy.ts';
 import { type BufferLike } from './polyfill.js';
-declare const SPECIALS: Record<string, string[]>;
+type SpecialRange = 'loopback' | 'private' | 'linklocal' | 'multicast' | 'documentation' | 'reserved';
+declare const SPECIALS: Record<SpecialRange, string[]>;
 type Family = 4 | 6;
 type Raw = string | number | bigint | BufferLike | Array<number> | Address;
 type AddressSubnet = {
@@ -40,4 +41,5 @@ export declare class Address {
     static parseCidr: (cidr: string) => [Address, Address];
     private static ipV4ToLong;
     static isSpecial(addr: Raw, range?: keyof typeof SPECIALS): boolean;
+    static isPrivate(addr: Raw): boolean;
 }

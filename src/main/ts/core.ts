@@ -12,7 +12,8 @@ const DEC_RE = /^(0|[1-9]\d*)$/
 const OCT_RE = /^0[0-7]+$/
 
 // https://en.wikipedia.org/wiki/Reserved_IP_addresses
-const SPECIALS: Record<string, string[]> = {
+type SpecialRange = 'loopback' | 'private' | 'linklocal' | 'multicast' | 'documentation' | 'reserved'
+const SPECIALS: Record<SpecialRange, string[]> = {
   loopback: [
     '127.0.0.0/8',    // IPv4 loopback
     '::1/128',        // IPv6 loopback
@@ -392,7 +393,7 @@ export class Address {
             groups.every(g => g <= 0xff) ?                ((g0 << 24) | (g1 << 16) | (g2 << 8) | g3) >>> 0 : -1
   }
 
-  static isSpecial (addr: Raw, range?: keyof typeof SPECIALS): boolean {
+  static isSpecial(addr: Raw, range?: keyof typeof SPECIALS): boolean {
     const ip = Address.from(addr)
     const subnets = !range
       ? Object.values(SPECIAL_SUBNETS).flat()
@@ -405,10 +406,14 @@ export class Address {
 
     return false
   }
+
+  static isPrivate(addr: Raw) {
+    return this.isSpecial(addr, 'private')
+  }
 }
 
-const SPECIAL_SUBNETS: Record<keyof typeof SPECIALS, AddressSubnet[]> = fromEntries(Object.entries(SPECIALS)
-  .map(([cat, cidrs]) => [cat, cidrs.map((c) => Address.cidrSubnet(c))]))
+const SPECIAL_SUBNETS: Record<SpecialRange, AddressSubnet[]> = fromEntries(Object.entries(SPECIALS)
+  .map(([cat, cidrs]) => [cat as SpecialRange, cidrs.map((c) => Address.cidrSubnet(c))]))
 
 // -------------------------------------------------------
 // Legacy compatibility API with ip@2.0.1

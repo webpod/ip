@@ -53,8 +53,10 @@ const getGlobal = function() {
 export const Buffer = getGlobal().Buffer || FakeBuffer
 
 // node.js 10 compatibility
-export const fromEntries = Object.fromEntries || ((entries: [string, any][]) =>
-  entries.reduce((obj, [key, val]) => {
-    obj[key] = val
-    return obj
-  }, {} as Record<string, any>))
+export const fromEntries: <K extends PropertyKey, V>(entries: readonly (readonly [K, V])[]) => { [P in K]: V } =
+  Object.fromEntries ||
+  (<K extends PropertyKey, V>(entries: readonly (readonly [K, V])[]) =>
+    entries.reduce((obj, [key, val]) => {
+      (obj as any)[key] = val
+      return obj
+    }, {} as { [P in K]: V }))

@@ -637,6 +637,9 @@ var _Address = class _Address {
     }
     return false;
   }
+  static isPrivate(addr) {
+    return this.isSpecial(addr, "private");
+  }
 };
 __publicField(_Address, "fromPrefixLen", (prefixlen, family) => {
   const len = prefixlen | 0;
