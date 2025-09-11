@@ -9,13 +9,61 @@ const HEXX_RE = /^0x[0-9a-f]+$/
 const DEC_RE = /^(0|[1-9]\d*)$/
 const OCT_RE = /^0[0-7]+$/
 
+// https://en.wikipedia.org/wiki/Reserved_IP_addresses
+const SPECIALS: Record<string, string[]> = {
+  loopback: [
+    '127.0.0.0/8',    // IPv4 loopback
+    '::1/128',        // IPv6 loopback
+  ],
+  private: [
+    '10.0.0.0/8',     // IPv4 private
+    '172.16.0.0/12',  // IPv4 private
+    '192.168.0.0/16', // IPv4 private
+    '100.64.0.0/10',  // IPv4 CGNAT
+    'fc00::/7',       // IPv6 ULA
+    '198.18.0.0/15',  // IPv4 benchmarking
+  ],
+  linklocal: [
+    '169.254.0.0/16', // IPv4 link-local
+    'fe80::/64',      // IPv6 link-local
+  ],
+  multicast: [
+    '224.0.0.0/4',    // IPv4 multicast
+    'ff00::/8',       // IPv6 multicast
+  ],
+  documentation: [
+    '192.0.0.0/24',   // IPv4 IETF
+    '192.0.2.0/24',   // TEST-NET-1
+    '192.88.99.0/24', // IPv4 relay anycast
+    '198.51.100.0/24',// TEST-NET-2
+    '203.0.113.0/24', // TEST-NET-3
+    '2001:db8::/32',  // IPv6 docs
+  ],
+  reserved: [
+    '0.0.0.0/8',      // IPv4 current-net
+    '240.0.0.0/4',    // IPv4 reserved
+    '255.255.255.255/32', // IPv4 broadcast
+    '::/128',         // IPv6 unspecified
+    '::ffff:0:0/96',  // IPv4-mapped IPv6
+    '64:ff9b::/96',   // IPv6 NAT64
+    '64:ff9b:1::/48', // IPv6 NAT64 local
+    '100::/64',       // IPv6 discard
+    '2001::/32',      // ORCHID
+    '2001:20::/28',   // ORCHIDv2
+    '2002::/16',      // 6to4
+    '3fff::/20',      // IPv6 reserved
+    '5f00::/16',      // IPv6 reserved
+  ],
+}
+
 // -------------------------------------------------------
 // Class to parse and handle IP addresses
 // -------------------------------------------------------
 
 type Family = 4 | 6
-type Raw = string | number | bigint | BufferLike | Array<number>
+type Raw = string | number | bigint | BufferLike | Array<number> | Address
 type AddressSubnet = {
+  family: Family
   networkAddress: string
   firstAddress: string
   lastAddress: string
@@ -24,7 +72,7 @@ type AddressSubnet = {
   subnetMaskLength: number
   numHosts: bigint
   length: bigint
-  contains(ip: string | number | Address): boolean
+  contains(addr: Raw): boolean
 }
 
 export class Address {
@@ -88,7 +136,7 @@ export class Address {
     return Object.assign(Object.create(this.prototype), extra)
   }
 
-  static from(raw: Raw | Address): Address {
+  static from(raw: Raw): Address {
     if (raw instanceof Address) return this.create(raw)
     if (typeof raw === 'string') return this.fromString(raw)
     if (typeof raw === 'number' || typeof raw === 'bigint') return this.fromNumber(raw)
@@ -97,7 +145,7 @@ export class Address {
     throw new Error('Invalid address')
   }
 
-  static mask(addr: Raw | Address, mask: Raw | Address): string {
+  static mask(addr: Raw, mask: Raw): string {
     const a = Address.from(addr)
     const m = Address.from(mask)
 
@@ -128,7 +176,7 @@ export class Address {
     throw new Error('Unsupported family combination')
   }
 
-  static subnet(addr: Raw | Address, smask: Raw | Address): AddressSubnet {
+  static subnet(addr: Raw, smask: Raw): AddressSubnet {
     const a = Address.from(addr)
     const m = Address.from(smask)
     const bits = m.family === 4 ? 32 : 128
@@ -154,7 +202,8 @@ export class Address {
       subnetMaskLength: maskLen,
       numHosts:         hosts,
       length:           len,
-      contains: (ip: string | number): boolean => {
+      family:           m.family,
+      contains: (ip: Raw): boolean => {
         const {big} = Address.from(ip)
         return big >= nw && big <= bc
       },
@@ -169,14 +218,14 @@ export class Address {
     return this.subnet(...this.parseCidr(cidrString))
   }
 
-  static not(addr: Raw | Address): string {
+  static not(addr: Raw): string {
     const { big, family } = Address.from(addr)
     const bits = family === 4 ? 32 : 128
     const mask = (1n << BigInt(bits)) - 1n
     return Address.fromNumber(~big & mask, family).toString()
   }
 
-  static or(addrA: Raw | Address, addrB: Raw | Address): string {
+  static or(addrA: Raw, addrB: Raw): string {
     const a = Address.from(addrA)
     const b = Address.from(addrB)
 
@@ -195,7 +244,7 @@ export class Address {
     return Address.fromNumber(resultBig, 6).toString()
   }
 
-  static isEqual(addrA: Raw | Address, addrB: Raw | Address): boolean {
+  static isEqual(addrA: Raw, addrB: Raw): boolean {
     const a = Address.from(addrA)
     const b = Address.from(addrB)
 
@@ -317,8 +366,8 @@ export class Address {
     const [ip, prefix] = chunks
     if (chunks.length !== 2 || !prefix.length) throw new Error(`Invalid CIDR: ${cidr}`)
 
-    const m = this.fromPrefixLen(parseInt(prefix, 10))
     const addr = this.fromString(ip)
+    const m = this.fromPrefixLen(parseInt(prefix, 10), addr.family)
     return [addr, m]
   }
 
@@ -340,9 +389,27 @@ export class Address {
            l === 3 && g0 <= 0xff && g1 <= 0xff && g2 <= 0xffff ? ((g0 << 24) | (g1 << 16) | (g2 & 0xffff)) >>> 0 :
            groups.every(g => g <= 0xff) ?                ((g0 << 24) | (g1 << 16) | (g2 << 8) | g3) >>> 0 : -1
   }
+
+  static isSpecial (addr: Raw, range?: keyof typeof SPECIALS): boolean {
+    const ip = Address.from(addr)
+    const subnets = !range
+      ? Object.values(SPECIAL_SUBNETS).flat()
+      : SPECIAL_SUBNETS[range] ?? []
+console.log('!!!', subnets)
+    for (const subnet of subnets) {
+      console.log(subnet.family, ip.family)
+      if (subnet.family !== ip.family) continue
+      if (subnet.contains(ip)) return true
+    }
+
+    return false
+  }
 }
+
+const SPECIAL_SUBNETS: Record<keyof typeof SPECIALS, AddressSubnet[]> = Object
+  .fromEntries(Object.entries(SPECIALS)
+    .map(([cat, cidrs]) => [cat, cidrs.map((c) => Address.cidrSubnet(c))]))
 
 // -------------------------------------------------------
 // Legacy compatibility API
 // -------------------------------------------------------
-

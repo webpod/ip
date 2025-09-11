@@ -1,7 +1,9 @@
 import { type BufferLike } from './buffer.ts';
+declare const SPECIALS: Record<string, string[]>;
 type Family = 4 | 6;
-type Raw = string | number | bigint | BufferLike | Array<number>;
+type Raw = string | number | bigint | BufferLike | Array<number> | Address;
 type AddressSubnet = {
+    family: Family;
     networkAddress: string;
     firstAddress: string;
     lastAddress: string;
@@ -10,7 +12,7 @@ type AddressSubnet = {
     subnetMaskLength: number;
     numHosts: bigint;
     length: bigint;
-    contains(ip: string | number | Address): boolean;
+    contains(addr: Raw): boolean;
 };
 export declare class Address {
     raw: Raw;
@@ -21,14 +23,14 @@ export declare class Address {
     toString(family?: Family, mapped?: boolean): string;
     toLong(): number;
     private static create;
-    static from(raw: Raw | Address): Address;
-    static mask(addr: Raw | Address, mask: Raw | Address): string;
-    static subnet(addr: Raw | Address, smask: Raw | Address): AddressSubnet;
+    static from(raw: Raw): Address;
+    static mask(addr: Raw, mask: Raw): string;
+    static subnet(addr: Raw, smask: Raw): AddressSubnet;
     static cidr(cidrString: string): string;
     static cidrSubnet(cidrString: string): AddressSubnet;
-    static not(addr: Raw | Address): string;
-    static or(addrA: Raw | Address, addrB: Raw | Address): string;
-    static isEqual(addrA: Raw | Address, addrB: Raw | Address): boolean;
+    static not(addr: Raw): string;
+    static or(addrA: Raw, addrB: Raw): string;
+    static isEqual(addrA: Raw, addrB: Raw): boolean;
     static fromPrefixLen: (prefixlen: number, family?: Family) => Address;
     private static fromNumber;
     private static fromBuffer;
@@ -36,5 +38,6 @@ export declare class Address {
     private static ipv4ToGroups;
     static parseCidr: (cidr: string) => [Address, Address];
     private static ipV4ToLong;
+    static isSpecial(addr: Raw, range?: keyof typeof SPECIALS): boolean;
 }
 export {};
