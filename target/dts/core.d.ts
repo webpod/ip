@@ -1,4 +1,5 @@
 import { type BufferLike } from './polyfill.ts';
+export type { BufferLike } from './polyfill.ts';
 export type Special = 'loopback' | 'private' | 'linklocal' | 'multicast' | 'documentation' | 'reserved' | 'unspecified';
 type Family = 4 | 6;
 type Raw = string | number | bigint | BufferLike | Array<number> | Address;
@@ -67,4 +68,3 @@ export declare const isV4Format: (addr: string) => boolean;
 export declare const isV6Format: (addr: string) => boolean;
 export declare function isLoopback(addr: Raw): boolean;
 export declare function loopback(family?: string | number): string;
-export {};

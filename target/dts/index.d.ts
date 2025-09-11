@@ -3,7 +3,7 @@ export * from './address.ts';
 export * from './core.ts';
 export declare const ip: {
     fromPrefixLen(prefixlen: number, family?: string | number): string;
-    subnet(addr: string | number | bigint | number[] | import("./polyfill.ts").BufferLike | core.Address, smask: string | number | bigint | number[] | import("./polyfill.ts").BufferLike | core.Address): Omit<{
+    subnet(addr: string | number | bigint | number[] | core.BufferLike | core.Address, smask: string | number | bigint | number[] | core.BufferLike | core.Address): Omit<{
         family: 4 | 6;
         networkAddress: string;
         firstAddress: string;
@@ -13,7 +13,7 @@ export declare const ip: {
         subnetMaskLength: number;
         numHosts: bigint;
         length: bigint;
-        contains(addr: string | number | bigint | number[] | import("./polyfill.ts").BufferLike | core.Address): boolean;
+        contains(addr: string | number | bigint | number[] | core.BufferLike | core.Address): boolean;
     }, "length" | "numHosts"> & {
         numHosts: number | bigint;
         length: number | bigint;
@@ -28,16 +28,16 @@ export declare const ip: {
         subnetMaskLength: number;
         numHosts: bigint;
         length: bigint;
-        contains(addr: string | number | bigint | number[] | import("./polyfill.ts").BufferLike | core.Address): boolean;
+        contains(addr: string | number | bigint | number[] | core.BufferLike | core.Address): boolean;
     }, "length" | "numHosts"> & {
         numHosts: number | bigint;
         length: number | bigint;
     };
-    toBuffer(addr: string | number | bigint | number[] | import("./polyfill.ts").BufferLike | core.Address, buff?: import("./polyfill.ts").BufferLike, offset?: number): import("./polyfill.ts").BufferLike;
-    toString(buf: import("./polyfill.ts").BufferLike | number, offset?: number, length?: number): string;
-    toLong(addr: string | number | bigint | number[] | import("./polyfill.ts").BufferLike | core.Address): number;
+    toBuffer(addr: string | number | bigint | number[] | core.BufferLike | core.Address, buff?: core.BufferLike, offset?: number): core.BufferLike;
+    toString(buf: core.BufferLike | number, offset?: number, length?: number): string;
+    toLong(addr: string | number | bigint | number[] | core.BufferLike | core.Address): number;
     fromLong(n: number | bigint | `${bigint}`): string;
-    isLoopback(addr: string | number | bigint | number[] | import("./polyfill.ts").BufferLike | core.Address): boolean;
+    isLoopback(addr: string | number | bigint | number[] | core.BufferLike | core.Address): boolean;
     loopback(family?: string | number): string;
     Address: typeof core.Address;
     isPublic: (typeof core.Address)["isPublic"];

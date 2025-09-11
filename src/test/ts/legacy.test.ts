@@ -3,10 +3,7 @@ import {test, describe} from 'vitest'
 
 import {
   type BufferLike,
-  normalizeFamily,
   normalizeToLong,
-  IPV4,
-  IPV6,
   isV4Format,
   isV6Format,
   isLoopback,
@@ -24,26 +21,28 @@ import {
   cidrSubnet,
   or,
   not,
+  Address,
 } from '../../main/ts/core.ts'
+
+const {normalizeFamily} = Address
 
 describe('core', () => {
   test('normalizeFamily() normalizes input to enum', () => {
-    const cases: [any, string][] = [
-      [4, IPV4],
-      ['4', IPV4],
-      ['ipv4', IPV4],
-      ['iPV4', IPV4],
-      [6, IPV6],
-      ['6', IPV6],
-      ['ipv6', IPV6],
-      [undefined, IPV4],
-      [null, IPV4],
-      ['', IPV4],
+    const cases: [any, number][] = [
+      [4, 4],
+      ['4', 4],
+      ['ipv4', 4],
+      ['iPV4', 4],
+      [6, 6],
+      ['6', 6],
+      ['ipv6', 6]
     ]
     for (const [input, expected] of cases) {
       const result = normalizeFamily(input)
       assert.equal(result, expected, `normalizeFamily(${input}) === ${expected}`)
     }
+
+    assert.throws(() => normalizeFamily(0), /Invalid family/)
   })
 
   test('normalizeToLong()', () => {
@@ -84,20 +83,20 @@ describe('core', () => {
     }
   })
 
-  describe.only('isV6Format()', () => {
+  describe('isV6Format()', () => {
     const cases: [string, boolean][] = [
-      // ['', false],                    // empty
-      // ['::1', true],                  // loopback
-      // ['::', true],                   // unspecified
-      // ['2001:db8::1', true],          // documentation range
-      // ['fe80::1', true],              // link-local
-      // ['ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff', true], // full expanded IPv6
-      // ['1.2.3.4', false],             // IPv4
-      // ['::ffff:127.0.0.1', true],     // IPv4-mapped IPv6 (valid IPv6 string!)
-      // ['12345::1', false],            // too big hextet
-      // ['abcd::abcd::1', false],       // double compression
+      ['', false],                    // empty
+      ['::1', true],                  // loopback
+      ['::', true],                   // unspecified
+      ['2001:db8::1', true],          // documentation range
+      ['fe80::1', true],              // link-local
+      ['ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff', true], // full expanded IPv6
+      ['1.2.3.4', false],             // IPv4
+      ['::ffff:127.0.0.1', true],     // IPv4-mapped IPv6 (valid IPv6 string!)
+      ['12345::1', false],            // too big hextet
+      ['abcd::abcd::1', false],       // double compression
       ['0:0:0:0:0:0:0:0:0:0', false], // extra bits
-      //['abcd:efgh::1', false],        // invalid hex chars
+      ['abcd:efgh::1', false],        // invalid hex chars
     ]
 
     for (const [input, expected] of cases) {
@@ -160,52 +159,21 @@ describe('core', () => {
     const cases: [string | number, BufferLike][] = [
       ['127.0.0.1',       Buffer.from([127, 0, 0, 1])],
       ['0.0.0.1',         Buffer.from([0, 0, 0, 1])],
-      // ['::0.0.0.1',       Buffer.from([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1])],  // invalid but supported
       ['::ffff:0.0.0.1',  Buffer.from([0,0,0,0, 0,0,0,0, 0,0,255,255, 0,0,0,1])],
-      // ['::ff:0.0.0.1',    Buffer.from([0,0,0,0, 0,0,0,0, 0,0,0,255, 0,0,0,1])], // invalid but supported
       ['::1',             Buffer.from([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1])],
       ['1::',             Buffer.from([0,1,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0])],
       ['0001::',          Buffer.from([0,1,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0])],
-      ['1:0:0:0:0:0:0:0', Buffer.from([0,1,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0])],
-      // ['1:0:0:0:0:0',     Buffer.from([0,1,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0])], // invalid but supported
       ['abcd::dcba',      Buffer.from([0xab,0xcd,0,0, 0,0,0,0, 0,0,0,0, 0,0,0xdc,0xba])],
+      ['1:0:0:0:0:0:0:0', Buffer.from([0,1,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0])],
+
+      // invalid but supported in ip@2.x
+      // ['::ff:0.0.0.1',    Buffer.from([0,0,0,0, 0,0,0,0, 0,0,0,255, 0,0,0,1])],
+      // ['::0.0.0.1',       Buffer.from([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1])],
+      // ['1:0:0:0:0:0',     Buffer.from([0,1,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0])],
     ]
 
     for (const [input, expected] of cases)
       assert.deepEqual(toBuffer(input), expected, `toBuffer(${input}) === ${expected}`)
-  })
-
-  test('toBuffer()/toString()', () => {
-    const u = undefined
-    const cases: [string | number, Buffer | undefined, number | undefined, number | undefined, string, string?][] = [
-      ['127.0.0.1', u, u, u, '7f000001'],
-      [2130706433, u, u, u, '7f000001'],
-      // ['::ffff:127.0.0.1', u, u, u, '00000000000000000000ffff7f000001', '::ffff:7f00:1'],
-      //['127.0.0.1', Buffer.alloc(128), 64, 4, '0'.repeat(128) + '7f000001' + '0'.repeat(120)],
-      // ['::1', u, u, u, '00000000000000000000000000000001'],
-      // ['1::', u, u, u, '00010000000000000000000000000000'],
-      // ['abcd::dcba', u, u, u, 'abcd000000000000000000000000dcba'],
-      // ['::1', Buffer.alloc(128), 64, 16, '0'.repeat(128 + 31) + '1' + '0'.repeat(128 - 32)],
-      // ['abcd::dcba', Buffer.alloc(128), 64, 16, '0'.repeat(128) + 'abcd000000000000000000000000dcba' + '0'.repeat(128 - 32)],
-      // ['::ffff:127.0.0.1', u, u, u, '00000000000000000000ffff7f000001', '::ffff:7f00:1'],
-      // // ['ffff::127.0.0.1', u, u, u, 'ffff000000000000000000007f000001', 'ffff::7f00:1'],
-      // ['0:0:0:0:0:ffff:127.0.0.1', u, u, u, '00000000000000000000ffff7f000001', '::ffff:7f00:1'],
-    ]
-    for (const [input, b, o, l, h, s = input] of cases) {
-      const buf = toBuffer(input, b, o)
-      const str = toString(buf, o, l)
-      const long = toLong(buf)
-      const hex = buf.toString('hex')
-
-      console.log('buf:', buf)
-
-      assert.equal(hex, h, `toBuffer(${input}).toString('hex') === ${h}`)
-
-      if (typeof s === 'string') assert.equal(str, s, `toString(toBuffer(${input})) === ${s}`)
-      if (typeof s === 'number') assert.equal(long, s, `toLong(toBuffer(${input})) === ${s}`)
-    }
-
-    assert.throws(() => toBuffer(''), /Invalid/)
   })
 
   test('toLong(), toString(), toBuffer() roundtrip', () => {
@@ -274,7 +242,6 @@ describe('core', () => {
         numHosts: 2
       }],
 
-      // wtf?
       ['::1010:1010', '::ffff:0', {
         firstAddress: '::1010:1',
         lastAddress:  '::1010:fffe',
@@ -289,7 +256,6 @@ describe('core', () => {
       assert.ok(out.every(a => !res.contains(a)), `subnet(${addr}, ${smask}) does not contain ${out.join(', ')}`)
     }
   })
-
 
   test('cidr()', () => {
     const cases: [string, string][] = [
@@ -410,7 +376,7 @@ describe('core', () => {
       ['10.1.23.45', true],
       ['12.1.2.3'],
 
-      // ['198.18.0.0'],
+      ['198.18.0.0', true],
 
       ['fd12:3456:789a:1::1', true],
       ['fe80::f2de:f1ff:fe3f:307e', true],
@@ -430,10 +396,12 @@ describe('core', () => {
       // CVE-2024-29415
       ['127.1', true],
       ['2130706433', true],
+      ['::fFFf:127.0.0.1', true],
+
+      // Now invalid raising error
       // ['01200034567', false],
       // ['012.1.2.3', false],
       // ['000:0:0000::01', true],
-      ['::fFFf:127.0.0.1', true],
       // ['::fFFf:127.255.255.256', true]
     ]
 

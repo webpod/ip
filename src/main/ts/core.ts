@@ -1,6 +1,6 @@
-// export * from './legacy.ts'
-
 import { type BufferLike, Buffer, fromEntries } from './polyfill.ts'
+
+export type { BufferLike } from './polyfill.ts'
 
 const IPV4_LEN_LIM = 4 * 3 + 3 // 4 groups of 3dec + 3 dots
 const IPV6_LEN_LIM = 4 * 8 + 7 // 8 groups of 4hex + 7 colons
