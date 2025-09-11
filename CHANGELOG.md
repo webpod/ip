@@ -1,3 +1,20 @@
+## [0.2.0](https://github.com/webpod/ip/compare/v0.1.0...v0.2.0) (2025-09-11)
+
+### Fixes & improvements
+* docs: describe `Address` proto ([2f450cb](https://github.com/webpod/ip/commit/2f450cbd0cd3b3e3464214a7ded22a4de87ec3fe))
+* refactor: align inputs normalization ([d45bf5b](https://github.com/webpod/ip/commit/d45bf5b273c910aa73c6c8fbe7522817977c5aaf))
+* fix: avoid prefix bytes loss on ipv4 mapped ipv6 parsing ([ce59bfd](https://github.com/webpod/ip/commit/ce59bfd870ac1ce29c87cd1d3a0a1d89692cda0f))
+* refactor: rebuild legacy methods with `Address` ([3c01ec5](https://github.com/webpod/ip/commit/3c01ec533787bd96373f616e4a995f75c22663ce))
+* refactor: enhance rangemap types ([1ae1ed2](https://github.com/webpod/ip/commit/1ae1ed259e82094556856d18c85c5c6f38356e4d))
+* refactor: rearrange internal modules ([e98b272](https://github.com/webpod/ip/commit/e98b272d3e60b715429822564e8e367b1d29ccb3))
+* refactor: separate `Address.parse()` helper ([64eb291](https://github.com/webpod/ip/commit/64eb2918017c8dcfc2aa1de82d325a94609ce4e7))
+* refactor: simplify `ipV4ToLong()` ([7fd3889](https://github.com/webpod/ip/commit/7fd3889c124ad53642f2258afa0c06cb3ff40619))
+
+### Features
+* feat: add `Address.isSpecial()` (#12) ([0d18017](https://github.com/webpod/ip/commit/0d1801791d94dbb7119bdca6055106938542f143))
+* feat: add `toArray()` shortcut (#11) ([f16dce0](https://github.com/webpod/ip/commit/f16dce045aa03ffa2af2d0ce1956bc4cb667102a))
+* feat: introduce `Address` class ([abb28ed](https://github.com/webpod/ip/commit/abb28edb00b6163f59824a95fe85c505c6c7e654))
+
 ## [0.1.0](https://github.com/webpod/ip/compare/v0.0.1...v0.1.0) (2025-09-08)
 
 ### Features
