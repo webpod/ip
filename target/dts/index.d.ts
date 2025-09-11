@@ -33,6 +33,7 @@ export declare const ip: {
         numHosts: number | bigint;
         length: number | bigint;
     };
+    toBuffer(addr: string | number | bigint | number[] | core.BufferLike | core.Address, buff?: core.BufferLike, offset?: number): core.BufferLike;
     Address: typeof core.Address;
     isPublic: (typeof core.Address)["isPublic"];
     isPrivate: (typeof core.Address)["isPrivate"];
@@ -60,7 +61,6 @@ export declare const ip: {
     fromLong: (n: number) => string;
     toLong: (ip: string | core.BufferLike) => number;
     toString: (buff: core.BufferLike | number, offset?: number, length?: number) => string;
-    toBuffer: (ip: string | number, buff?: core.BufferLike, offset?: number) => core.BufferLike;
     isSpecial: (addr: string) => boolean;
     addresses: (name?: string, family?: string) => string[];
     address: (name?: string, family?: string) => string | undefined;

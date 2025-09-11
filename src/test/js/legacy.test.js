@@ -69,9 +69,10 @@ describe('IP library for node.js', () => {
       assert.equal(buf.toString('hex'), '00000000000000000000ffff7f000001');
       assert.equal(ip.toString(buf), '::ffff:7f00:1');
 
-      buf = ip.toBuffer('ffff::127.0.0.1');
-      assert.equal(buf.toString('hex'), 'ffff000000000000000000007f000001');
-      assert.equal(ip.toString(buf), 'ffff::7f00:1');
+      // (!) Invalid mapped address, should not be converted to IPv4
+      // buf = ip.toBuffer('ffff::127.0.0.1');
+      // assert.equal(buf.toString('hex'), 'ffff000000000000000000007f000001');
+      // assert.equal(ip.toString(buf), 'ffff::7f00:1');
 
       buf = ip.toBuffer('0:0:0:0:0:ffff:127.0.0.1');
       assert.equal(buf.toString('hex'), '00000000000000000000ffff7f000001');

@@ -46,10 +46,8 @@ const SPECIALS: Record<Special, string[]> = {
     '2001:db8::/32',  // IPv6 docs
   ],
   reserved: [
-    '0.0.0.0/8',      // IPv4 current-net
     '240.0.0.0/4',    // IPv4 reserved
     '255.255.255.255/32', // IPv4 broadcast
-    '::/128',         // IPv6 unspecified
     '::ffff:0:0/96',  // IPv4-mapped IPv6
     '64:ff9b::/96',   // IPv6 NAT64
     '64:ff9b:1::/48', // IPv6 NAT64 local
@@ -330,18 +328,12 @@ export class Address {
     ]
     const last = groups[groups.length - 1]
     if (last.includes('.')) {
-      if (heads.length > 1) throw new Error(`Invalid address: ${addr}`)
-      if (heads.length === 0 ) {
-        if (tails.length > 2) throw new Error(`Invalid address: ${addr}`)
-        if (tails.length === 2) {
-          if (tails[0] !== 'ffff') throw new Error(`Invalid address: ${addr}`)
-          groups[5] = 'ffff'
-        }
-      } else {
-        return this.fromLong(this.normalizeToLong(last))
-      }
+      if (last.length === raw.length) return this.fromLong(this.normalizeToLong(last))
+      if (groups[groups.length - 2] !== 'ffff') throw new Error(`Invalid address: ${addr}`)
+      if (groups.slice(0, -2).some(v => v !== '0')) throw new Error(`Invalid address: ${addr}`)
 
       const [g6, g7] = this.ipv4ToGroups(last)
+      groups[5] = 'ffff'
       groups[6] = g6
       groups[7] = g7
     }
@@ -475,6 +467,10 @@ export function subnet(addr: Raw, smask: Raw): LegacySubnet {
 export function cidrSubnet(cidrString: string): LegacySubnet {
   const sub = Address.cidrSubnet(cidrString)
   return sub.family === 6 ? sub : {...sub, numHosts: Number(sub.numHosts), length: Number(sub.length)}
+}
+
+export function toBuffer(addr: Raw, buff?: BufferLike, offset = 0): BufferLike {
+  return Address.from(addr).toBuffer(buff, offset)
 }
 
 

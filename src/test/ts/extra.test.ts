@@ -7,11 +7,11 @@ describe('extra', () => {
     describe('prototype', () => {
       describe('toBuffer()', () => {
         const cases: [[string, Buffer?, number?], Buffer][] = [
-          [['::'],             Buffer.alloc(16, 0)],
-          [['0',               Buffer.from([0,0,0,0])], Buffer.from([0,0,0,0])],
-          [['1.2.3.4'],        Buffer.from([1,2,3,4])],
-          [['::1.2.3.4'],      Buffer.from([0,0,0,0, 0,0,0,0, 0,0,0,0,     1,2,3,4])],
-          [['::ffff:1.2.3.4'], Buffer.from([0,0,0,0, 0,0,0,0, 0,0,255,255, 1,2,3,4])],
+          [['::'],                Buffer.alloc(16, 0)],
+          [['0',                  Buffer.from([0,0,0,0])], Buffer.from([0,0,0,0])],
+          [['1.2.3.4'],           Buffer.from([1,2,3,4])],
+          [['::ffff:1.2.3.4'],    Buffer.from([0,0,0,0, 0,0,0,0, 0,0,255,255, 1,2,3,4])],
+          [['0::0:ffff:1.2.3.4'], Buffer.from([0,0,0,0, 0,0,0,0, 0,0,255,255, 1,2,3,4])],
         ]
 
         for (const [[input, b, o], expected] of cases) {
@@ -176,10 +176,8 @@ describe('extra', () => {
           ['2001:db8::1', true, 'documentation'],
           ['192.0.2.1', false, 'private'],
 
-          ['0.0.0.0', true, 'reserved'],
           ['240.0.0.1', true, 'reserved'],
           ['255.255.255.255', true, 'reserved'],
-          ['::', true, 'reserved'],
           ['::ffff:192.0.2.1', true, 'reserved'],
           ['64:ff9b::1', true, 'reserved'],
           ['64:ff9b:1::abcd', true, 'reserved'],
@@ -231,6 +229,7 @@ describe('extra', () => {
           ['0',              {big: 0n, family: 4}],
           ['0.0.0.1',        {big: 1n, family: 4}],
           ['1.1.1.1',        {big: 16843009n, family: 4}],
+          ['127.0.0.1',      {big: 2130706433n, family: 4}],
           ['255.255.255.255',{big: 4294967295n, family: 4}],
 
           // buffer inputs

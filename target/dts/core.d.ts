@@ -60,3 +60,4 @@ type LegacySubnet = Omit<Subnet, 'numHosts' | 'length'> & {
 };
 export declare function subnet(addr: Raw, smask: Raw): LegacySubnet;
 export declare function cidrSubnet(cidrString: string): LegacySubnet;
+export declare function toBuffer(addr: Raw, buff?: BufferLike, offset?: number): BufferLike;

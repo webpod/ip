@@ -333,14 +333,10 @@ var SPECIALS2 = {
     // IPv6 docs
   ],
   reserved: [
-    "0.0.0.0/8",
-    // IPv4 current-net
     "240.0.0.0/4",
     // IPv4 reserved
     "255.255.255.255/32",
     // IPv4 broadcast
-    "::/128",
-    // IPv6 unspecified
     "::ffff:0:0/96",
     // IPv4-mapped IPv6
     "64:ff9b::/96",
@@ -542,17 +538,11 @@ var _Address = class _Address {
     ];
     const last = groups[groups.length - 1];
     if (last.includes(".")) {
-      if (heads.length > 1) throw new Error(`Invalid address: ${addr}`);
-      if (heads.length === 0) {
-        if (tails.length > 2) throw new Error(`Invalid address: ${addr}`);
-        if (tails.length === 2) {
-          if (tails[0] !== "ffff") throw new Error(`Invalid address: ${addr}`);
-          groups[5] = "ffff";
-        }
-      } else {
-        return this.fromLong(this.normalizeToLong(last));
-      }
+      if (last.length === raw.length) return this.fromLong(this.normalizeToLong(last));
+      if (groups[groups.length - 2] !== "ffff") throw new Error(`Invalid address: ${addr}`);
+      if (groups.slice(0, -2).some((v) => v !== "0")) throw new Error(`Invalid address: ${addr}`);
       const [g6, g7] = this.ipv4ToGroups(last);
+      groups[5] = "ffff";
       groups[6] = g6;
       groups[7] = g7;
     }
@@ -659,6 +649,9 @@ function cidrSubnet2(cidrString) {
   const sub = Address.cidrSubnet(cidrString);
   return sub.family === 6 ? sub : { ...sub, numHosts: Number(sub.numHosts), length: Number(sub.length) };
 }
+function toBuffer2(addr, buff, offset = 0) {
+  return Address.from(addr).toBuffer(buff, offset);
+}
 export {
   Address,
   IPV4,
@@ -689,7 +682,7 @@ export {
   or,
   setMode,
   subnet2 as subnet,
-  toBuffer,
+  toBuffer2 as toBuffer,
   toLong,
   toString
 };
