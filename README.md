@@ -94,9 +94,29 @@ ip.subnet('192.168.1.134', '255.255.255.192')
 ip.cidrSubnet('192.168.1.134/26').contains('192.168.1.190') // true
 ```
 
-### Additional features
+### Address class
 ```ts
-import {Address} from '@webpod/ip'
+import { Address } from '@webpod/ip'
+
+// -------------------------------------------------------
+// Prototype methods
+// -------------------------------------------------------
+
+const addr4 = Address.from('192.168.1.134')
+
+addr4.family        // 4
+addr4.big           // 323223590n
+addr4.toString()    // '192.168.1.134'
+addr4.toLong()      // 323223590
+addr4.toBuffer()    // <Buffer c0 a8 01 86>
+addr4.toArray()     // [192, 168, 1, 134]
+
+const addr6 = Address.from('::1')
+
+addr6.family        // 6
+addr6.big           // 1n
+addr6.toString()    // '::1'
+addr6.toString(4)   // '0.0.0.1'
 
 // -------------------------------------------------------
 // Specific ranges check
