@@ -670,9 +670,7 @@ var _Address = class _Address {
     var _a;
     const ip = _Address.from(addr);
     const subnets = !range ? Object.values(SPECIAL_SUBNETS).flat() : (_a = SPECIAL_SUBNETS[range]) != null ? _a : [];
-    console.log("!!!", subnets);
     for (const subnet2 of subnets) {
-      console.log(subnet2.family, ip.family);
       if (subnet2.family !== ip.family) continue;
       if (subnet2.contains(ip)) return true;
     }
@@ -697,7 +695,11 @@ __publicField(_Address, "parseCidr", (cidr2) => {
   return [addr, m];
 });
 var Address = _Address;
-var SPECIAL_SUBNETS = Object.fromEntries(Object.entries(SPECIALS2).map(([cat, cidrs]) => [cat, cidrs.map((c) => Address.cidrSubnet(c))]));
+var fromEntries = Object.fromEntries || ((entries) => entries.reduce((obj, [key, val]) => {
+  obj[key] = val;
+  return obj;
+}, {}));
+var SPECIAL_SUBNETS = fromEntries(Object.entries(SPECIALS2).map(([cat, cidrs]) => [cat, cidrs.map((c) => Address.cidrSubnet(c))]));
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   Address,

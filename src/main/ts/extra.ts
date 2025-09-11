@@ -395,9 +395,8 @@ export class Address {
     const subnets = !range
       ? Object.values(SPECIAL_SUBNETS).flat()
       : SPECIAL_SUBNETS[range] ?? []
-console.log('!!!', subnets)
+
     for (const subnet of subnets) {
-      console.log(subnet.family, ip.family)
       if (subnet.family !== ip.family) continue
       if (subnet.contains(ip)) return true
     }
@@ -406,10 +405,16 @@ console.log('!!!', subnets)
   }
 }
 
-const SPECIAL_SUBNETS: Record<keyof typeof SPECIALS, AddressSubnet[]> = Object
-  .fromEntries(Object.entries(SPECIALS)
+// node.js 10 compatibility
+const fromEntries = Object.fromEntries || ((entries: [string, any][]) =>
+  entries.reduce((obj, [key, val]) => {
+    obj[key] = val
+    return obj
+  }, {} as Record<string, any>))
+
+const SPECIAL_SUBNETS: Record<keyof typeof SPECIALS, AddressSubnet[]> = fromEntries(Object.entries(SPECIALS)
     .map(([cat, cidrs]) => [cat, cidrs.map((c) => Address.cidrSubnet(c))]))
 
 // -------------------------------------------------------
-// Legacy compatibility API
+// Legacy compatibility API with ip@2.0.1
 // -------------------------------------------------------
