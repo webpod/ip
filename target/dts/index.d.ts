@@ -3,7 +3,7 @@ export * from './address.ts';
 export * from './core.ts';
 export declare const ip: {
     fromPrefixLen(prefixlen: number, family?: string | number): string;
-    subnet(addr: string | number | bigint | number[] | core.BufferLike | core.Address, smask: string | number | bigint | number[] | core.BufferLike | core.Address): Omit<{
+    subnet(addr: string | number | bigint | number[] | import("./polyfill.ts").BufferLike | core.Address, smask: string | number | bigint | number[] | import("./polyfill.ts").BufferLike | core.Address): Omit<{
         family: 4 | 6;
         networkAddress: string;
         firstAddress: string;
@@ -13,7 +13,7 @@ export declare const ip: {
         subnetMaskLength: number;
         numHosts: bigint;
         length: bigint;
-        contains(addr: string | number | bigint | number[] | core.BufferLike | core.Address): boolean;
+        contains(addr: string | number | bigint | number[] | import("./polyfill.ts").BufferLike | core.Address): boolean;
     }, "length" | "numHosts"> & {
         numHosts: number | bigint;
         length: number | bigint;
@@ -28,12 +28,17 @@ export declare const ip: {
         subnetMaskLength: number;
         numHosts: bigint;
         length: bigint;
-        contains(addr: string | number | bigint | number[] | core.BufferLike | core.Address): boolean;
+        contains(addr: string | number | bigint | number[] | import("./polyfill.ts").BufferLike | core.Address): boolean;
     }, "length" | "numHosts"> & {
         numHosts: number | bigint;
         length: number | bigint;
     };
-    toBuffer(addr: string | number | bigint | number[] | core.BufferLike | core.Address, buff?: core.BufferLike, offset?: number): core.BufferLike;
+    toBuffer(addr: string | number | bigint | number[] | import("./polyfill.ts").BufferLike | core.Address, buff?: import("./polyfill.ts").BufferLike, offset?: number): import("./polyfill.ts").BufferLike;
+    toString(buf: import("./polyfill.ts").BufferLike | number, offset?: number, length?: number): string;
+    toLong(addr: string | number | bigint | number[] | import("./polyfill.ts").BufferLike | core.Address): number;
+    fromLong(n: number | bigint | `${bigint}`): string;
+    isLoopback(addr: string | number | bigint | number[] | import("./polyfill.ts").BufferLike | core.Address): boolean;
+    loopback(family?: string | number): string;
     Address: typeof core.Address;
     isPublic: (typeof core.Address)["isPublic"];
     isPrivate: (typeof core.Address)["isPrivate"];
@@ -43,26 +48,9 @@ export declare const ip: {
     or: (typeof core.Address)["or"];
     cidr: (typeof core.Address)["cidr"];
     normalizeToLong: (typeof core.Address)["normalizeToLong"];
-    normalizeFamily(family?: string | number): core.Family;
-    IPV4: "IPv4";
-    IPV6: "IPv6";
-    V4_RE: RegExp;
-    V6_RE: RegExp;
-    V4_S_RE: RegExp;
-    V6_S_RE: RegExp;
-    isV4Format: (ip: string) => boolean;
-    isV6Format: (ip: string) => boolean;
-    isV4: (ip: string) => boolean;
-    isV6: (ip: string) => boolean;
-    setMode: (mode: "legacy" | "strict") => void;
-    normalizeAddress: (addr: string | number) => string;
-    isLoopback: (addr: string | number) => boolean;
-    loopback: (family?: string | number) => "127.0.0.1" | "fe80::1";
-    fromLong: (n: number) => string;
-    toLong: (ip: string | core.BufferLike) => number;
-    toString: (buff: core.BufferLike | number, offset?: number, length?: number) => string;
-    isSpecial: (addr: string) => boolean;
-    addresses: (name?: string, family?: string) => string[];
+    isV4Format: (addr: string) => boolean;
+    isV6Format: (addr: string) => boolean;
+    addresses: (name?: string, family?: string | number) => string[];
     address: (name?: string, family?: string) => string | undefined;
 };
 export default ip;

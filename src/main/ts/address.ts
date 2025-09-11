@@ -1,12 +1,13 @@
 import os from 'node:os'
-import { isLoopback, isPrivate, isPublic, loopback, normalizeFamily } from './core.ts'
+import { isLoopback, isPrivate, isPublic, loopback, Address } from './core.ts'
 
 const PUBLIC = 'public'
 const PRIVATE = 'private'
 
-export const addresses = (name?: string, family?: string): string[] => {
-  const interfaces = os.networkInterfaces()
+const {normalizeFamily} = Address
+export const addresses = (name?: string, family: string | number = 4): string[] => {
   const fam = normalizeFamily(family)
+  const interfaces = os.networkInterfaces()
   const check =
     name === PUBLIC ? isPublic
       : name === PRIVATE ? isPrivate

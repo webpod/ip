@@ -10,7 +10,6 @@ export declare const isV4Format: (ip: string) => boolean;
 export declare const isV6Format: (ip: string) => boolean;
 export declare const isV4: (ip: string) => boolean;
 export declare const isV6: (ip: string) => boolean;
-export declare const setMode: (mode: "legacy" | "strict") => void;
 export type Family = typeof IPV4 | typeof IPV6;
 export declare function normalizeFamily(family?: string | number): Family;
 export declare const normalizeAddress: (addr: string | number) => string;

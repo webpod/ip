@@ -1,4 +1,3 @@
-export * from './legacy.ts';
 import { type BufferLike } from './polyfill.ts';
 export type Special = 'loopback' | 'private' | 'linklocal' | 'multicast' | 'documentation' | 'reserved' | 'unspecified';
 type Family = 4 | 6;
@@ -21,7 +20,7 @@ export declare class Address {
     big: bigint;
     toBuffer(buff?: BufferLike, offset?: number): BufferLike;
     toArray(): number[];
-    toString(family?: Family, mapped?: boolean): string;
+    toString(family?: Family | string | number, mapped?: boolean): string;
     toLong(): number;
     private static create;
     static from(raw: Raw): Address;
@@ -61,3 +60,11 @@ type LegacySubnet = Omit<Subnet, 'numHosts' | 'length'> & {
 export declare function subnet(addr: Raw, smask: Raw): LegacySubnet;
 export declare function cidrSubnet(cidrString: string): LegacySubnet;
 export declare function toBuffer(addr: Raw, buff?: BufferLike, offset?: number): BufferLike;
+export declare function toString(buf: BufferLike | number, offset?: number, length?: number): string;
+export declare function toLong(addr: Raw): number;
+export declare function fromLong(n: number | bigint | `${bigint}`): string;
+export declare const isV4Format: (addr: string) => boolean;
+export declare const isV6Format: (addr: string) => boolean;
+export declare function isLoopback(addr: Raw): boolean;
+export declare function loopback(family?: string | number): string;
+export {};

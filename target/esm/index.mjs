@@ -11,12 +11,13 @@ __export(address_exports, {
   addresses: () => addresses
 });
 import os from "node:os";
-import { isLoopback, isPrivate, isPublic, loopback, normalizeFamily } from "./core.mjs";
+import { isLoopback, isPrivate, isPublic, loopback, Address } from "./core.mjs";
 var PUBLIC = "public";
 var PRIVATE = "private";
-var addresses = (name, family) => {
-  const interfaces = os.networkInterfaces();
+var { normalizeFamily } = Address;
+var addresses = (name, family = 4) => {
   const fam = normalizeFamily(family);
+  const interfaces = os.networkInterfaces();
   const check = name === PUBLIC ? isPublic : name === PRIVATE ? isPrivate : () => true;
   if (name && name !== PRIVATE && name !== PUBLIC) {
     const nic = interfaces[name];

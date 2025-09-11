@@ -22,13 +22,6 @@ const defs = {
   V6_RE,
 }
 
-export const setMode = (mode: 'legacy' | 'strict'): void => {
-  if (mode === 'legacy') { Object.assign(defs, { V4_RE, V6_RE }); return }
-  if (mode === 'strict') { Object.assign(defs, { V4_RE: V4_S_RE, V6_RE: V6_S_RE }); return }
-
-  throw new Error('mode must be either "legacy" or "strict"')
-}
-
 // Corresponds Nodejs.NetworkInterfaceBase
 export type Family = typeof IPV4 | typeof IPV6
 export function normalizeFamily(family?: string | number): Family {
@@ -144,7 +137,7 @@ export const toString = (buff: BufferLike | number, offset = 0, length?: number)
   // IPv6
   if (l === 16)
     return Array
-      .from({ length: l / 2 }, (_, i) => buff.readUInt16BE(o + i * 2).toString(16))
+      .from({ length: l / 2 }, (_, i) => ((buff[o + i * 2] << 8) | buff[o + i * 2 + 1]).toString(16))
       .join(':')
       .replace(/(^|:)0(:0)*:0(:|$)/, '$1::$3')
       .replace(/:{3,4}/, '::')
@@ -351,7 +344,7 @@ export const isEqual = (a: string, b: string): boolean => {
   for (let i = 0; i < 10; i++) if (buffB[i] !== 0) return false
 
   // next 2 bytes must be either 0x0000 or 0xffff (::ffff:ipv4)
-  const prefix = buffB.readUInt16BE(10)
+  const prefix = (buffB[10] << 8) | buffB[11]
   if (prefix !== 0 && prefix !== 0xffff) return false
 
   // last 4 bytes must match IPv4 buffer

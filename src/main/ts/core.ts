@@ -1,9 +1,11 @@
-export * from './legacy.ts'
+// export * from './legacy.ts'
 
 import { type BufferLike, Buffer, fromEntries } from './polyfill.ts'
 
 const IPV4_LEN_LIM = 4 * 3 + 3 // 4 groups of 3dec + 3 dots
 const IPV6_LEN_LIM = 4 * 8 + 7 // 8 groups of 4hex + 7 colons
+const IPV4_LB = '127.0.0.1'
+const IPV6_LB = 'fe80::1'
 
 const HEX_RE = /^[0-9a-fA-F]+$/
 const HEXX_RE = /^0x[0-9a-f]+$/
@@ -101,7 +103,7 @@ export class Address {
     return [...this.toBuffer()]
   }
 
-  toString(family: Family = this.family, mapped?: boolean): string {
+  toString(family: Family | string | number = this.family, mapped?: boolean): string {
     const fam = Address.normalizeFamily(family)
     const _mapped = mapped ?? (fam === 6 && this.family !== fam)
     const { big } = this
@@ -315,30 +317,36 @@ export class Address {
     const raw = addr
     if (addr === '::' ) return this.create({ big: 0n, family: 6, raw })
     if (addr === '0') return this.create({ big: 0n, family: 4, raw })
-    if (!addr || addr.length > IPV6_LEN_LIM) throw new Error(`Invalid address: ${addr}`)
+    if (!addr || (addr.length > IPV6_LEN_LIM)) throw new Error(`Invalid address: ${addr}`)
 
     // Compressed zeros (::)
-    const [h, t] = addr.split('::', 2)
-    const heads = h ? h.split(':', 8) : []
-    const tails = t ? t.split(':', 8) : []
+    const [h, t, e] = addr.split('::', 3)
+    if (e) throw new Error(`Invalid address: ${addr}`)
+
+    const heads = h ? h.split(':', 9) : []
+    const tails = t ? t.split(':', 9) : []
+    const diff = 8 - heads.length - tails.length
+    const single = diff === 7
+    if (diff < 0 || diff === 0 && t) throw new Error(`Invalid address: ${addr}`)
+    if (single && DEC_RE.test(raw)) return Address.fromNumber(raw as `${bigint}`) // single decimal number
     const groups = t === undefined ? heads : [
       ...heads,
-      ...Array(8 - heads.length - tails.length).fill('0'),
+      ...Array(diff).fill('0'),
       ...tails,
     ]
     const last = groups[groups.length - 1]
     if (last.includes('.')) {
-      if (last.length === raw.length) return this.fromLong(this.normalizeToLong(last))
-      if (groups[groups.length - 2] !== 'ffff') throw new Error(`Invalid address: ${addr}`)
-      if (groups.slice(0, -2).some(v => v !== '0')) throw new Error(`Invalid address: ${addr}`)
+      if (single) return this.fromLong(this.normalizeToLong(last))
+
+      if (!diff || groups[groups.length - 2] !== 'ffff' || groups.slice(0, -2).some(v => v !== '0'))
+        throw new Error(`Invalid address: ${addr}`)
 
       const [g6, g7] = this.ipv4ToGroups(last)
       groups[5] = 'ffff'
       groups[6] = g6
       groups[7] = g7
     }
-    if (groups.length === 1 && DEC_RE.test(last)) return Address.fromNumber(raw as `${bigint}`) // single decimal number
-    if (groups.length !== 8 || groups.includes('')) throw new Error(`Invalid address: ${addr}`)
+    if (groups.length !== 8) throw new Error(`Invalid address: ${addr}`)
 
     const big = groups.reduce(
       (acc, part) => {
@@ -473,4 +481,50 @@ export function toBuffer(addr: Raw, buff?: BufferLike, offset = 0): BufferLike {
   return Address.from(addr).toBuffer(buff, offset)
 }
 
+export function toString(buf: BufferLike | number, offset = 0, length?: number): string {
+  if (typeof buf === 'number') return Address.from(buf).toString()
 
+  const sliced = buf.subarray(
+    offset,
+    length ? offset + length : undefined
+  )
+
+  return Address.from(sliced).toString()
+}
+
+export function toLong(addr: Raw): number {
+  return Address.from(addr).toLong()
+}
+
+export function fromLong(n: number | bigint | `${bigint}`): string {
+  return Address.from(n).toString()
+}
+
+export const isV4Format = (addr: string)=> {
+  if (!/(\d{1,3}\.){3}\d{1,3}/.test(addr)) return false
+
+  try {
+    return Address.from(addr).family === 4
+  } catch {
+    return false
+  }
+}
+
+export const isV6Format = (addr: string) => {
+  if (!`${addr}`.includes(':')) return false
+
+  try {
+    return Address.from(addr).family === 6
+  } catch (e) {
+    return false
+  }
+}
+
+export function isLoopback(addr: Raw): boolean {
+  return Address.isSpecial(addr, ['loopback', 'unspecified', 'linklocal'])
+}
+
+export function loopback(family: string | number = 4): string {
+  const fam = Address.normalizeFamily(family)
+  return fam === 4 ? IPV4_LB : IPV6_LB
+}
