@@ -226,6 +226,7 @@ describe('extra', () => {
           ['::ffff:0.0.0.256',    /Invalid/],
           ['::ffff:0.0.0.256',    /Invalid/],
           ['255.255.255.256',     /Invalid/],
+          ['ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255', /Invalid/], // https://www.rfc-editor.org/rfc/rfc4291#section-2.2
 
           // valid IPv6
           ['::',       {big: 0n, family: 6}],
@@ -289,11 +290,12 @@ describe('extra', () => {
 
           ['', /Invalid CIDR/],
           ['192.168.1.134', /Invalid CIDR/],
-          ['::1', /Invalid CIDR/],
           ['192.168.1.134/', /Invalid CIDR/],
+          ['::1', /Invalid CIDR/],
           ['::1/', /Invalid CIDR/],
 
           // Out-of-range prefix lengths
+          ['fff:fff:fff:fff:fff:fff:fff:fff/1000', /Invalid prefix/],
           ['192.168.1.134/33', /Invalid prefix/],
           ['2607:f0d0:1002:51::4/129', /Invalid prefix/],
 

@@ -73,7 +73,7 @@ var fromEntries = Object.fromEntries || ((entries) => entries.reduce((obj, [key,
 
 // src/main/ts/core.ts
 var IPV4_LEN_LIM = 4 * 3 + 3;
-var IPV6_LEN_LIM = 4 * 8 + 7;
+var IPV6_LEN_LIM = 8 * 4 + 7;
 var IPV4_LB = "127.0.0.1";
 var IPV6_LB = "fe80::1";
 var IPV6_MAX = (/* @__PURE__ */ BigInt("1") << /* @__PURE__ */ BigInt("128")) - /* @__PURE__ */ BigInt("1");
@@ -417,6 +417,7 @@ __publicField(_Address, "fromPrefixLen", (prefixlen, family) => {
   return _Address.fromNumber(big);
 });
 __publicField(_Address, "parseCidr", (cidr2) => {
+  if (cidr2.length > IPV6_LEN_LIM + 4) throw new Error(`Invalid CIDR: ${cidr2}`);
   const chunks = cidr2.split("/", 3);
   const [ip, prefix] = chunks;
   if (chunks.length !== 2 || !prefix.length) throw new Error(`Invalid CIDR: ${cidr2}`);

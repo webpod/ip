@@ -38,7 +38,7 @@ export declare class Address {
     private static fromBuffer;
     private static fromString;
     private static ipv4ToGroups;
-    static parseCidr: (cidr: string) => [Address, Address];
+    private static parseCidr;
     static normalizeFamily(family: string | number): Family;
     static normalizeToLong(addr: string): number;
     static isSpecial(addr: Raw, range?: Special | Special[]): boolean;

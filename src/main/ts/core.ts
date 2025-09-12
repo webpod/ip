@@ -2,8 +2,8 @@ import { type BufferLike, Buffer, fromEntries } from './polyfill.ts'
 
 export type { BufferLike } from './polyfill.ts'
 
-const IPV4_LEN_LIM = 4 * 3 + 3 // 4 groups of 3dec + 3 dots
-const IPV6_LEN_LIM = 4 * 8 + 7 // 8 groups of 4hex + 7 colons
+const IPV4_LEN_LIM = 4 * 3 + 3  // 4 groups of 3dec + 3 dots
+const IPV6_LEN_LIM = 8 * 4 + 7  // 8 groups of 4hex + 7 colons
 const IPV4_LB = '127.0.0.1'
 const IPV6_LB = 'fe80::1'
 const IPV6_MAX = (1n << 128n) - 1n
@@ -379,7 +379,8 @@ export class Address {
     ]
   }
 
-  static parseCidr = (cidr: string): [Address, Address] => {
+  private static parseCidr = (cidr: string): [Address, Address] => {
+    if (cidr.length > IPV6_LEN_LIM + 4) throw new Error(`Invalid CIDR: ${cidr}`)
     const chunks = cidr.split('/', 3)
     const [ip, prefix] = chunks
     if (chunks.length !== 2 || !prefix.length) throw new Error(`Invalid CIDR: ${cidr}`)
