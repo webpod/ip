@@ -44,6 +44,8 @@ var IPV4_LEN_LIM = 4 * 3 + 3;
 var IPV6_LEN_LIM = 4 * 8 + 7;
 var IPV4_LB = "127.0.0.1";
 var IPV6_LB = "fe80::1";
+var IPV6_MAX = (/* @__PURE__ */ BigInt("1") << /* @__PURE__ */ BigInt("128")) - /* @__PURE__ */ BigInt("1");
+var IPV4_MAX = /* @__PURE__ */ BigInt("0xffffffff");
 var HEX_RE = /^[0-9a-fA-F]+$/;
 var HEXX_RE = /^0x[0-9a-f]+$/;
 var DEC_RE = /^(0|[1-9]\d*)$/;
@@ -148,14 +150,14 @@ var _Address = class _Address {
     const _mapped = mapped != null ? mapped : fam === 6 && this.family !== fam;
     const { big } = this;
     if (fam === 4) {
-      if (big > /* @__PURE__ */ BigInt("0xffffffff")) throw new Error(`Address is wider than IPv4: ${this}`);
+      if (big > IPV4_MAX) throw new Error(`Address is wider than IPv4: ${this}`);
       return Array.from(
         { length: 4 },
         (_, i) => Number(big >> BigInt((3 - i) * 8) & /* @__PURE__ */ BigInt("0xff"))
       ).join(".");
     }
-    if (_mapped && big < /* @__PURE__ */ BigInt("0x100000000")) {
-      const ipv4 = Number(big & /* @__PURE__ */ BigInt("0xffffffff"));
+    if (_mapped && big <= IPV4_MAX) {
+      const ipv4 = Number(big & IPV4_MAX);
       return `::ffff:${[
         ipv4 >> 24 & 255,
         ipv4 >> 16 & 255,
@@ -169,7 +171,7 @@ var _Address = class _Address {
     ).join(":").replace(/(^|:)0(:0)*:0(:|$)/, "$1::$3").replace(/:{3,4}/, "::");
   }
   toLong() {
-    if (this.big > /* @__PURE__ */ BigInt("0xffffffff")) throw new Error(`Address is wider than IPv4: ${this}`);
+    if (this.big > IPV4_MAX) throw new Error(`Address is wider than IPv4: ${this}`);
     return Number(this.big);
   }
   static create(extra) {
@@ -192,13 +194,13 @@ var _Address = class _Address {
       return _Address.fromNumber(masked, a.family).toString();
     }
     if (a.family === 6 && m.family === 4) {
-      const low32 = a.big & /* @__PURE__ */ BigInt("0xffffffff");
+      const low32 = a.big & IPV4_MAX;
       const maskedLow = low32 & m.big;
-      const masked = a.big & ~/* @__PURE__ */ BigInt("0xffffffff") | maskedLow;
+      const masked = a.big & ~IPV4_MAX | maskedLow;
       return _Address.fromNumber(masked, a.family).toString();
     }
     if (a.family === 4 && m.family === 6) {
-      const lowMask = m.big & /* @__PURE__ */ BigInt("0xffffffff");
+      const lowMask = m.big & IPV4_MAX;
       const low = a.big & lowMask;
       const masked = /* @__PURE__ */ BigInt("0xffff") << /* @__PURE__ */ BigInt("32") | low;
       return _Address.fromNumber(masked, a.family).toString();
@@ -269,8 +271,8 @@ var _Address = class _Address {
   }
   static fromNumber(n, fam) {
     const big = BigInt(n);
-    if (big < /* @__PURE__ */ BigInt("0")) throw new Error(`Invalid address: ${n}`);
-    const family = big > /* @__PURE__ */ BigInt("0xffffffff") ? 6 : fam || 4;
+    if (big < /* @__PURE__ */ BigInt("0") || big > IPV6_MAX) throw new Error(`Invalid address: ${n}`);
+    const family = big > IPV4_MAX ? 6 : fam || 4;
     return this.create({ raw: n, big, family });
   }
   static fromLong(n) {
@@ -295,8 +297,9 @@ var _Address = class _Address {
     if (addr === "::") return this.create({ big: /* @__PURE__ */ BigInt("0"), family: 6, raw });
     if (addr === "0") return this.create({ big: /* @__PURE__ */ BigInt("0"), family: 4, raw });
     if (!addr || addr.length > IPV6_LEN_LIM) throw new Error(`Invalid address: ${addr}`);
-    const [h, t, _] = addr.split("::", 3);
-    if (_) throw new Error(`Invalid address: ${addr}`);
+    const parts = addr.split("::", 3);
+    if (parts.length > 2) throw new Error(`Invalid address: ${addr}`);
+    const [h, t] = parts;
     const heads = h ? h.split(":", 9) : [];
     const tails = t ? t.split(":", 9) : [];
     const diff = 8 - heads.length - tails.length;

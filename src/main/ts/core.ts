@@ -6,6 +6,8 @@ const IPV4_LEN_LIM = 4 * 3 + 3 // 4 groups of 3dec + 3 dots
 const IPV6_LEN_LIM = 4 * 8 + 7 // 8 groups of 4hex + 7 colons
 const IPV4_LB = '127.0.0.1'
 const IPV6_LB = 'fe80::1'
+const IPV6_MAX = (1n << 128n) - 1n
+const IPV4_MAX = 0xffffffffn
 
 const HEX_RE = /^[0-9a-fA-F]+$/
 const HEXX_RE = /^0x[0-9a-f]+$/
@@ -109,15 +111,15 @@ export class Address {
     const { big } = this
     // IPv4
     if (fam === 4) {
-      if (big > 0xffffffffn) throw new Error(`Address is wider than IPv4: ${this}`)
+      if (big > IPV4_MAX) throw new Error(`Address is wider than IPv4: ${this}`)
       return Array.from({ length: 4 }, (_, i) =>
         Number((big >> BigInt((3 - i) * 8)) & 0xffn)
       ).join('.')
     }
 
     // IPv6-mapped IPv4 (::ffff:x.x.x.x)
-    if (_mapped && big < 0x100000000n) {
-      const ipv4 = Number(big & 0xffffffffn)
+    if (_mapped && big <= IPV4_MAX) {
+      const ipv4 = Number(big & IPV4_MAX)
       return `::ffff:${[
         (ipv4 >> 24) & 0xff,
         (ipv4 >> 16) & 0xff,
@@ -136,7 +138,7 @@ export class Address {
   }
 
   toLong(): number {
-    if (this.big > 0xffffffffn) throw new Error(`Address is wider than IPv4: ${this}`)
+    if (this.big > IPV4_MAX) throw new Error(`Address is wider than IPv4: ${this}`)
     return Number(this.big)
   }
 
@@ -167,15 +169,15 @@ export class Address {
 
     // IPv6 addr with IPv4 mask → apply low 32 bits
     if (a.family === 6 && m.family === 4) {
-      const low32 = a.big & 0xffffffffn
+      const low32 = a.big & IPV4_MAX
       const maskedLow = low32 & m.big
-      const masked = (a.big & ~0xffffffffn) | maskedLow
+      const masked = (a.big & ~IPV4_MAX) | maskedLow
       return Address.fromNumber(masked, a.family).toString()
     }
 
     // IPv4 addr with IPv6 mask → expand to ::ffff:ipv4
     if (a.family === 4 && m.family === 6) {
-      const lowMask = m.big & 0xffffffffn
+      const lowMask = m.big & IPV4_MAX
       const low = a.big & lowMask
       const masked = (0xffffn << 32n) | low
       return Address.fromNumber(masked, a.family).toString()
@@ -287,8 +289,8 @@ export class Address {
 
   private static fromNumber(n: number | bigint | `${bigint}`, fam?: Family): Address {
     const big = BigInt(n)
-    if (big < 0n) throw new Error(`Invalid address: ${n}`)
-    const family = big > 0xffffffffn ? 6 : (fam || 4)
+    if (big < 0n || big > IPV6_MAX) throw new Error(`Invalid address: ${n}`)
+    const family = big > IPV4_MAX ? 6 : (fam || 4)
     return this.create({ raw: n, big, family})
   }
 
@@ -320,9 +322,10 @@ export class Address {
     if (!addr || (addr.length > IPV6_LEN_LIM)) throw new Error(`Invalid address: ${addr}`)
 
     // Compressed zeros (::)
-    const [h, t, _] = addr.split('::', 3)
-    if (_) throw new Error(`Invalid address: ${addr}`)
+    const parts = addr.split('::', 3)
+    if (parts.length > 2 ) throw new Error(`Invalid address: ${addr}`)
 
+    const [h, t] = parts
     const heads = h ? h.split(':', 9) : []
     const tails = t ? t.split(':', 9) : []
     const diff = 8 - heads.length - tails.length
