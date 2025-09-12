@@ -213,7 +213,7 @@ export class Address {
       numHosts:         hosts,
       length:           len,
       family:           m.family,
-      contains: (ip: Raw): boolean => {
+      contains(ip: Raw): boolean {
         const {big} = Address.from(ip)
         return big >= nw && big <= bc
       },

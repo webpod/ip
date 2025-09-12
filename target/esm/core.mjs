@@ -229,7 +229,7 @@ var _Address = class _Address {
       numHosts: hosts,
       length: len,
       family: m.family,
-      contains: (ip) => {
+      contains(ip) {
         const { big } = _Address.from(ip);
         return big >= nw && big <= bc;
       }

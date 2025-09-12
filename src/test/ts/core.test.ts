@@ -119,7 +119,10 @@ describe('extra', () => {
           // ['012.1.2.3', false],
           // ['000:0:0000::01', true],
           ['::fFFf:127.0.0.1', true],
-          ['::fFFf:127.255.255.256', /Invalid/]
+          ['::fFFf:127.255.255.256', /Invalid/],
+
+          // https://github.com/indutny/node-ip/issues/160
+          ['0', true],
         ]
 
         for (const [input, expected] of cases) {
