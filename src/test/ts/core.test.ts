@@ -238,6 +238,7 @@ describe('extra', () => {
             {big: (1n << 128n) - 1n, family: 6}],
           ['::ffff:0.0.0.1', {big: 281470681743361n, family: 6}], // IPv4-mapped
           ['0:0:0:0:0:ffff:0.0.0.1', {big: 281470681743361n, family: 6}],
+          ['0000:0000:0000:0000:0000:ffff:255.255.255.255', {big: 281474976710655n, family: 6}],
 
           // valid IPv4
           ['0',              {big: 0n, family: 4}],
@@ -295,7 +296,7 @@ describe('extra', () => {
           ['::1/', /Invalid CIDR/],
 
           // Out-of-range prefix lengths
-          ['fff:fff:fff:fff:fff:fff:fff:fff/1000', /Invalid prefix/],
+          ['ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/1000', /Invalid prefix/],
           ['192.168.1.134/33', /Invalid prefix/],
           ['2607:f0d0:1002:51::4/129', /Invalid prefix/],
 

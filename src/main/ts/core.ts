@@ -2,8 +2,8 @@ import { type BufferLike, Buffer, fromEntries } from './polyfill.ts'
 
 export type { BufferLike } from './polyfill.ts'
 
-const IPV4_LEN_LIM = 4 * 3 + 3  // 4 groups of 3dec + 3 dots
-const IPV6_LEN_LIM = 8 * 4 + 7  // 8 groups of 4hex + 7 colons
+const IPV4_LEN_LIM = 4 * 3 + 3                // 4 groups of 3dec + 3 dots
+const IPV6_LEN_LIM = 6 * 4 + 6 + IPV4_LEN_LIM // 6 groups of 4hex + 6 colons + ipv4 = IPv4-mapped IPv6
 const IPV4_LB = '127.0.0.1'
 const IPV6_LB = 'fe80::1'
 const IPV6_MAX = (1n << 128n) - 1n
@@ -345,7 +345,7 @@ export class Address {
     const last = groups[groups.length - 1]
     if (last.includes('.')) {
       if (single) return this.fromLong(this.normalizeToLong(last))
-      if (!diff || groups[groups.length - 2] !== 'ffff' || groups.slice(0, -2).some(v => v !== '0'))
+      if (!diff || groups[groups.length - 2] !== 'ffff' || groups.slice(0, -2).some(v => +v !== 0))
         throw new Error(`Invalid address: ${addr}`)
 
       const [g6, g7] = this.ipv4ToGroups(last)

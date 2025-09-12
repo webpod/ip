@@ -41,7 +41,7 @@ var fromEntries = Object.fromEntries || ((entries) => entries.reduce((obj, [key,
 
 // src/main/ts/core.ts
 var IPV4_LEN_LIM = 4 * 3 + 3;
-var IPV6_LEN_LIM = 8 * 4 + 7;
+var IPV6_LEN_LIM = 6 * 4 + 6 + IPV4_LEN_LIM;
 var IPV4_LB = "127.0.0.1";
 var IPV6_LB = "fe80::1";
 var IPV6_MAX = (/* @__PURE__ */ BigInt("1") << /* @__PURE__ */ BigInt("128")) - /* @__PURE__ */ BigInt("1");
@@ -315,7 +315,7 @@ var _Address = class _Address {
     const last = groups[groups.length - 1];
     if (last.includes(".")) {
       if (single) return this.fromLong(this.normalizeToLong(last));
-      if (!diff || groups[groups.length - 2] !== "ffff" || groups.slice(0, -2).some((v) => v !== "0"))
+      if (!diff || groups[groups.length - 2] !== "ffff" || groups.slice(0, -2).some((v) => +v !== 0))
         throw new Error(`Invalid address: ${addr}`);
       const [g6, g7] = this.ipv4ToGroups(last);
       groups[5] = "ffff";
