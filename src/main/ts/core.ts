@@ -8,6 +8,7 @@ const IPV4_LB = '127.0.0.1'
 const IPV6_LB = 'fe80::1'
 const IPV6_MAX = (1n << 128n) - 1n
 const IPV4_MAX = 0xffffffffn
+const IPV4_FAST_RE = /(\d{1,3}\.){3}\d{1,3}$/
 
 const HEX_RE = /^[0-9a-fA-F]+$/
 const HEXX_RE = /^0x[0-9a-f]+$/
@@ -272,8 +273,10 @@ export class Address {
     return v6.big === ((0xffffn << 32n) | v4.big)
   }
 
-  static fromPrefixLen = (prefixlen: number, family?: string | number): Address => {
-    const len = prefixlen | 0
+  static fromPrefixLen = (prefixlen: number | `${number}` | string, family?: string | number): Address => {
+    if (typeof prefixlen === 'string' && !DEC_RE.test(prefixlen)) throw new Error(`Invalid prefix: ${prefixlen}`)
+
+    const len = +prefixlen | 0
     const fam = this.normalizeFamily(family || (len > 32 ? 6 : 4))
     const bits = fam === 6 ? 128 : 32
 
@@ -380,9 +383,10 @@ export class Address {
     const chunks = cidr.split('/', 3)
     const [ip, prefix] = chunks
     if (chunks.length !== 2 || !prefix.length) throw new Error(`Invalid CIDR: ${cidr}`)
+    if (ip.includes('.') && !IPV4_FAST_RE.test(ip)) throw new Error(`Invalid CIDR: ${cidr}`)
 
     const addr = this.fromString(ip)
-    const m = this.fromPrefixLen(parseInt(prefix, 10), addr.family)
+    const m = this.fromPrefixLen(prefix, addr.family)
     return [addr, m]
   }
 
@@ -501,7 +505,7 @@ export function fromLong(n: number | bigint | `${bigint}`): string {
 }
 
 export const isV4Format = (addr: string)=> {
-  if (!/(\d{1,3}\.){3}\d{1,3}/.test(addr)) return false
+  if (!IPV4_FAST_RE.test(addr)) return false
 
   try {
     return Address.from(addr).family === 4

@@ -32,7 +32,7 @@ export declare class Address {
     static not(addr: Raw): string;
     static or(addrA: Raw, addrB: Raw): string;
     static isEqual(addrA: Raw, addrB: Raw): boolean;
-    static fromPrefixLen: (prefixlen: number, family?: string | number) => Address;
+    static fromPrefixLen: (prefixlen: number | `${number}` | string, family?: string | number) => Address;
     private static fromNumber;
     private static fromLong;
     private static fromBuffer;

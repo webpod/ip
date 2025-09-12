@@ -283,17 +283,36 @@ describe('extra', () => {
       })
 
       test('cidr()', () => {
-        const cases: [string, string][] = [
+        const cases: [string, string | RegExp][] = [
           ['192.168.1.134/26', '192.168.1.128'],
-          ['2607:f0d0:1002:51::4/56', '2607:f0d0:1002::']
+          ['2607:f0d0:1002:51::4/56', '2607:f0d0:1002::'],
+
+          ['', /Invalid CIDR/],
+          ['192.168.1.134', /Invalid CIDR/],
+          ['::1', /Invalid CIDR/],
+          ['192.168.1.134/', /Invalid CIDR/],
+          ['::1/', /Invalid CIDR/],
+
+          // Out-of-range prefix lengths
+          ['192.168.1.134/33', /Invalid prefix/],
+          ['2607:f0d0:1002:51::4/129', /Invalid prefix/],
+
+          ['not-an-ip/24', /Invalid address/],
+          ['192.168.1.134/abc', /Invalid prefix/],
+          ['::gggg/64', /Invalid address/],
+
+          ['1:2:3:4:5:6:7:8:9/64', /Invalid address/],
+          ['1.2.3.4::5/64', /Invalid/],
+          ['1.2.3/64', /Invalid/],
         ]
 
         for (const [input, expected] of cases) {
-          const res = Address.cidr(input)
-          assert.strictEqual(res, expected, `cidr(${input}) === ${expected}`)
+          if (expected instanceof RegExp)
+            assert.throws(() => Address.cidr(input), expected)
+          else {
+            assert.strictEqual(Address.cidr(input), expected, `cidr(${input}) === ${expected}`)
+          }
         }
-
-        assert.throws(() => Address.cidr(''), /Invalid CIDR/)
       })
 
       test('cidrSubnet()', () => {
