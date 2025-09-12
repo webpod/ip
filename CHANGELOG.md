@@ -1,3 +1,8 @@
+## [0.2.1](https://github.com/webpod/ip/compare/v0.2.0...v0.2.1) (2025-09-12)
+
+### Fixes & improvements
+* fix: handle double compression mark `::` (#14) ([c8528a2](https://github.com/webpod/ip/commit/c8528a2e9310f2e09f24ae2eb35532419334d612))
+
 ## [0.2.0](https://github.com/webpod/ip/compare/v0.1.0...v0.2.0) (2025-09-11)
 
 ### Fixes & improvements
