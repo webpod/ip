@@ -46,6 +46,7 @@ var IPV4_LB = "127.0.0.1";
 var IPV6_LB = "fe80::1";
 var IPV6_MAX = (/* @__PURE__ */ BigInt("1") << /* @__PURE__ */ BigInt("128")) - /* @__PURE__ */ BigInt("1");
 var IPV4_MAX = /* @__PURE__ */ BigInt("0xffffffff");
+var IPV4_FAST_RE = /(\d{1,3}\.){3}\d{1,3}$/;
 var HEX_RE = /^[0-9a-fA-F]+$/;
 var HEXX_RE = /^0x[0-9a-f]+$/;
 var DEC_RE = /^(0|[1-9]\d*)$/;
@@ -374,7 +375,8 @@ var _Address = class _Address {
   }
 };
 __publicField(_Address, "fromPrefixLen", (prefixlen, family) => {
-  const len = prefixlen | 0;
+  if (typeof prefixlen === "string" && !DEC_RE.test(prefixlen)) throw new Error(`Invalid prefix: ${prefixlen}`);
+  const len = +prefixlen | 0;
   const fam = _Address.normalizeFamily(family || (len > 32 ? 6 : 4));
   const bits = fam === 6 ? 128 : 32;
   if (len < 0 || len > bits)
@@ -386,8 +388,9 @@ __publicField(_Address, "parseCidr", (cidr2) => {
   const chunks = cidr2.split("/", 3);
   const [ip, prefix] = chunks;
   if (chunks.length !== 2 || !prefix.length) throw new Error(`Invalid CIDR: ${cidr2}`);
+  if (ip.includes(".") && !IPV4_FAST_RE.test(ip)) throw new Error(`Invalid CIDR: ${cidr2}`);
   const addr = _Address.fromString(ip);
-  const m = _Address.fromPrefixLen(parseInt(prefix, 10), addr.family);
+  const m = _Address.fromPrefixLen(prefix, addr.family);
   return [addr, m];
 });
 var Address = _Address;
@@ -440,7 +443,7 @@ function fromLong(n) {
   return Address.from(n).toString();
 }
 var isV4Format = (addr) => {
-  if (!/(\d{1,3}\.){3}\d{1,3}/.test(addr)) return false;
+  if (!IPV4_FAST_RE.test(addr)) return false;
   try {
     return Address.from(addr).family === 4;
   } catch {
