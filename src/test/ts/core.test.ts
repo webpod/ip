@@ -27,7 +27,7 @@ describe('extra', () => {
       })
 
       describe('toString()', () => {
-        const cases: [string, string | RegExp, (4 | 6 | undefined)?][] = [
+        const cases: [string | bigint, string | RegExp, (4 | 6 | undefined)?][] = [
           ['::', '::', 6],
           ['::', '0.0.0.0', 4],
           ['::1', '::1', 6],
@@ -36,6 +36,7 @@ describe('extra', () => {
           ['1.2.3.4', '::ffff:1.2.3.4', 6],
           ['::0a0a:0a0a', '10.10.10.10', 4],
           ['ff::', /Address is wider than IPv4/, 4],
+          [340282366920938463463374607431768211455n, 'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff'],
         ]
 
         for (const [input, expected, fam] of cases) {
@@ -212,6 +213,7 @@ describe('extra', () => {
           ['ff::f:',  /Invalid address/],
           [':ff:',    /Invalid address/],
           ['ff:ff',   /Invalid address/],
+          ['efef::efef::',        /Invalid address/],
           ['1:2:3:4:5:6:7:8:9',   /Invalid address/],
           ['::1:2:3:4:5:6:7:8',   /Invalid address/],
           ['1:2:3:4::5:6:7:8',    /Invalid address/],
@@ -250,12 +252,15 @@ describe('extra', () => {
           [[127, 0, 0, 1], {big: 2130706433n, family: 4}],
           [[255, 255, 255, 256], /Invalid/],
 
-          // number inputs (assume IPv4)
+          // number inputs
           [0, {big: 0n, family: 4}],
           [4294967295, {big: 4294967295n, family: 4}],
+          [-1, /Invalid/],
 
-          // bigint inputs (assume IPv4)
+          // bigint inputs
           [1234n, {big: 1234n, family: 4}],
+          [2n ** 128n -1n, {big: 340282366920938463463374607431768211455n, family: 6}],
+          [2n ** 128n, /Invalid/],
 
           // Address input (clone)
           [Address.from(1), {big: 1n, family: 4}],
@@ -309,6 +314,43 @@ describe('extra', () => {
         }
 
         assert.throws(() => Address.cidrSubnet(''), /Invalid CIDR/)
+      })
+
+      test('cidrSubnet().contains()', () => {
+        const cases: [string, string | number | bigint, boolean | RegExp][] = [
+          // IPv6 inside range
+          ['efef::/64', 'efef::1', true],
+          ['efef::/64', 'abcd::1', false],
+
+          // IPv4 inside range
+          ['192.168.0.0/16', '192.168.1.1', true],
+          ['192.168.0.0/16', '10.0.0.1', false],
+
+          // IPv4 mapped IPv6
+          ['::ffff:192.168.0.0/112', '::ffff:192.168.0.1', true],
+          ['::ffff:192.168.0.0/112', '::ffff:10.0.0.1', false],
+
+          // Loopback
+          ['127.0.0.0/8', '127.0.0.1', true],
+          ['::ffff:127.0.0.0/104', '::ffff:127.0.0.1', true],
+
+          // Edge: first and last address of subnet
+          ['10.0.0.0/24', '10.0.0.0', true],   // network address
+          ['10.0.0.0/24', '10.0.0.255', true], // broadcast address
+
+          // Invalids
+          ['efef::efef::/64', '::1', /Invalid address/],
+          ['192.168.0.0/500', '192.168.0.1', /Invalid/],
+          ['192.168.0.0/24', 'not-an-ip', /Invalid/],
+          ['10.0.0.0/8', '', /Invalid address/],
+        ]
+
+        for (const [cidr, addr, expected] of cases) {
+          if (expected instanceof RegExp)
+            assert.throws(() => Address.cidrSubnet(cidr).contains(addr), expected)
+          else
+            assert.strictEqual(Address.cidrSubnet(cidr).contains(addr), expected, `cidrSubnet(${cidr}).contains(${addr}) === ${expected}`)
+        }
       })
 
       describe('mask()', () => {
