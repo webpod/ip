@@ -1,3 +1,8 @@
+## [0.2.2](https://github.com/webpod/ip/compare/v0.2.1...v0.2.2) (2025-09-12)
+
+### Fixes & improvements
+* fix: strengthen `fromPrefixLen()` (#15) ([355afcc](https://github.com/webpod/ip/commit/355afccf0a2b0e80ead01a01db3caf63727e8ef8))
+
 ## [0.2.1](https://github.com/webpod/ip/compare/v0.2.0...v0.2.1) (2025-09-12)
 
 ### Fixes & improvements
