@@ -1,3 +1,9 @@
+## [0.2.3](https://github.com/webpod/ip/compare/v0.2.2...v0.2.3) (2025-09-12)
+
+### Fixes & improvements
+* fix: adapt length limiter for full ipv4-mapped-ipv6 case ([d607594](https://github.com/webpod/ip/commit/d607594d9cb105abbcc73437c6f8c278e8dded1d))
+* perf: add str length precheck for `cidr()` ([55ca034](https://github.com/webpod/ip/commit/55ca034d0e452f9f1e111e89af0db5c5cb614d15))
+
 ## [0.2.2](https://github.com/webpod/ip/compare/v0.2.1...v0.2.2) (2025-09-12)
 
 ### Fixes & improvements
