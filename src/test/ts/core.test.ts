@@ -225,8 +225,9 @@ describe('extra', () => {
           ['0:0:0:0:0:0:ffff:0.0.0.1',    /Invalid/],
           ['::ffff:0.0.0.256',    /Invalid/],
           ['::ffff:0.0.0.256',    /Invalid/],
-          ['255.255.255.256',     /Invalid/],
           ['ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255', /Invalid/], // https://www.rfc-editor.org/rfc/rfc4291#section-2.2
+          ['255.255.255.256',     /Invalid/],
+          ['192.168.01.1',        /Invalid/],
 
           // valid IPv6
           ['::',       {big: 0n, family: 6}],

@@ -8,12 +8,24 @@ const IPV4_LB = '127.0.0.1'
 const IPV6_LB = 'fe80::1'
 const IPV6_MAX = (1n << 128n) - 1n
 const IPV4_MAX = 0xffffffffn
-const IPV4_FAST_RE = /(\d{1,3}\.){3}\d{1,3}$/
 
 const HEX_RE = /^[0-9a-fA-F]+$/
 const HEXX_RE = /^0x[0-9a-f]+$/
-const DEC_RE = /^(0|[1-9]\d*)$/
+const DEC_RE = /^(?:0|[1-9][0-9]*)$/
 const OCT_RE = /^0[0-7]+$/
+
+const isDec = (str: string): boolean => {
+  if (str === '0') return true
+  if (!str || str[0] === '0') return false
+  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); if (c < 48 || c > 57) return false }
+  return true
+}
+
+function isIPv4Candidate(str: string): boolean {
+  let dots = 0
+  for (let i = 0; i < str.length; i++) { if (str[i] === '.' && ++dots > 3) return false }
+  return dots === 3
+}
 
 // https://en.wikipedia.org/wiki/Reserved_IP_addresses
 export type Special = 'loopback' | 'private' | 'linklocal' | 'multicast' | 'documentation' | 'reserved' | 'unspecified'
@@ -143,12 +155,14 @@ export class Address {
     return Number(this.big)
   }
 
-  private static create(extra?: Partial<Address>): Address {
-    return Object.assign(Object.create(this.prototype), extra)
+  private static create(big: bigint, family: Family, raw: Raw): Address {
+    const o = Object.create(this.prototype)
+    o.big = big; o.family = family; o.raw = raw
+    return o
   }
 
   static from(raw: Raw): Address {
-    if (raw instanceof Address) return this.create(raw)
+    if (raw instanceof Address) return this.create(raw.big, raw.family, raw.raw)
     if (typeof raw === 'string') return this.fromString(raw.toLowerCase())
     if (typeof raw === 'number' || typeof raw === 'bigint') return this.fromNumber(raw)
     if (raw && typeof raw === 'object' && 'length' in raw) return this.fromBuffer(raw)
@@ -294,7 +308,7 @@ export class Address {
     const big = BigInt(n)
     if (big < 0n || big > IPV6_MAX) throw new Error(`Invalid address: ${n}`)
     const family = big > IPV4_MAX ? 6 : (fam || 4)
-    return this.create({ raw: n, big, family})
+    return this.create(big, family, n)
   }
 
   private static fromLong(n: number | bigint | `${bigint}`): Address {
@@ -319,23 +333,29 @@ export class Address {
   }
 
   private static fromString(addr: string): Address {
-    const raw = addr
-    if (addr === '::' ) return this.create({ big: 0n, family: 6, raw })
-    if (addr === '0') return this.create({ big: 0n, family: 4, raw })
     if (!addr || (addr.length > IPV6_LEN_LIM)) throw new Error(`Invalid address: ${addr}`)
+    if (addr === '::' ) return this.create(0n, 6, addr)
+    if (addr === '0') return this.create(0n, 4, addr)
+
+    const single = !addr.includes(':')
+    if (single) {
+      if (addr.includes('.')) return this.fromLong(this.normalizeToLong(addr, isIPv4Candidate(addr)))
+      if (DEC_RE.test(addr)) return this.fromNumber(addr as `${bigint}`)
+      throw new Error(`Invalid address: ${addr}`)
+    }
 
     // Compressed zeros (::)
-    const parts = addr.split('::', 3)
-    if (parts.length > 2 ) throw new Error(`Invalid address: ${addr}`)
+    const sep = addr.indexOf('::')
+    if ((sep !== -1) && addr.indexOf('::', sep + 1) !== -1)
+      throw new Error(`Invalid address: ${addr}`)
 
-    const [h, t] = parts
+    const h = sep === -1 ? addr : addr.slice(0, sep)
+    const t = sep === -1 ? undefined : addr.slice(sep + 2)
     const heads = h ? h.split(':', 9) : []
     const tails = t ? t.split(':', 9) : []
     const diff = 8 - heads.length - tails.length
-    const single = diff === 7
 
     if (diff < 0 || diff === 0 && t) throw new Error(`Invalid address: ${addr}`)
-    if (single && DEC_RE.test(raw)) return Address.fromNumber(raw as `${bigint}`) // single decimal number
 
     const groups = t === undefined ? heads : [
       ...heads,
@@ -344,7 +364,6 @@ export class Address {
     ]
     const last = groups[groups.length - 1]
     if (last.includes('.')) {
-      if (single) return this.fromLong(this.normalizeToLong(last))
       if (!diff || groups[groups.length - 2] !== 'ffff' || groups.slice(0, -2).some(v => +v !== 0))
         throw new Error(`Invalid address: ${addr}`)
 
@@ -361,7 +380,7 @@ export class Address {
       big = (big << 16n) + BigInt(parseInt(part, 16))
     }
 
-    return this.create({family: 6, big, raw})
+    return this.create(big, 6, addr)
   }
 
   private static ipv4ToGroups(addr: string): string[] {
@@ -384,7 +403,7 @@ export class Address {
     const chunks = cidr.split('/', 3)
     const [ip, prefix] = chunks
     if (chunks.length !== 2 || !prefix.length) throw new Error(`Invalid CIDR: ${cidr}`)
-    if (ip.includes('.') && !IPV4_FAST_RE.test(ip)) throw new Error(`Invalid CIDR: ${cidr}`)
+    if (ip.includes('.') && !isIPv4Candidate(ip)) throw new Error(`Invalid CIDR: ${cidr}`)
 
     const addr = this.fromString(ip)
     const m = this.fromPrefixLen(prefix, addr.family)
@@ -398,24 +417,33 @@ export class Address {
     throw new Error(`Invalid family: ${family}`)
   }
 
-  static normalizeToLong(addr: string): number {
-    const groups = addr.split('.', 5)
-      .map(v => {
-        const radix =
-          HEXX_RE.test(v) ? 16 :
-            DEC_RE.test(v) ? 10 :
-              OCT_RE.test(v) ? 8 : -1
-        return parseInt(v, radix)
-      })
-    const [g0, g1, g2, g3] = groups
-    const l = groups.length
+  static normalizeToLong(addr: string, forceDec = false): number {
+    const groups: number[] = []
+    let l = 0
+    let p = 0
+    let i = -1
+    while (((i = addr.indexOf('.', p)) !== -1) || !l || p) {
+      if (l === 4) return -1
+      const v = addr.slice(p, i === -1 ? addr.length : i)
+      if (isDec(v)) groups.push(+v)
+      else {
+        if (forceDec) return -1
+        const radix = HEXX_RE.test(v) ? 16 : OCT_RE.test(v) ? 8 : -1
+        if (radix === -1) return -1
+        groups.push(parseInt(v, radix))
+      }
 
-    return l > 4 || groups.some(isNaN) ? -1 :
-      l === 1 ? g0 :
+      p = i + 1
+      l = groups.length
+      if (i === -1) break
+    }
+
+    const [g0, g1, g2, g3] = groups
+    return l === 1 ? g0 :
       l === 2 && g0 <= 0xff && g1 <= 0xffffff ?             ((g0 << 24) | (g1 & 0xffffff)) >>> 0 :
       l === 3 && g0 <= 0xff && g1 <= 0xff && g2 <= 0xffff ? ((g0 << 24) | (g1 << 16) | (g2 & 0xffff)) >>> 0 :
-      groups.every(g => g <= 0xff) ?                ((g0 << 24) | (g1 << 16) | (g2 << 8) | g3) >>> 0 : -1
-  }
+      (g0 | g1 | g2 | g3) >>> 8 === 0 ?                     ((g0 << 24) | (g1 << 16) | (g2 << 8) | g3) >>> 0 : -1
+}
 
   static isSpecial(addr: Raw, range?: Special | Special[]): boolean {
     const ip = Address.from(addr)
@@ -506,13 +534,7 @@ export function fromLong(n: number | bigint | `${bigint}`): string {
 }
 
 export const isV4Format = (addr: string)=> {
-  if (!IPV4_FAST_RE.test(addr)) return false
-
-  try {
-    return Address.from(addr).family === 4
-  } catch {
-    return false
-  }
+  return isIPv4Candidate(addr) && Address.normalizeToLong(addr, true) !== -1
 }
 
 export const isV6Format = (addr: string) => {
