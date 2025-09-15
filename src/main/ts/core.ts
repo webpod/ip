@@ -453,15 +453,11 @@ export class Address {
     }
   }
 
-
   static isSpecial(addr: Raw, range?: Special | Special[]): boolean {
     const ip = Address.from(addr)
-    const subnets = ([] as Subnet[]).concat(...(range
-      ? (Array.isArray(range) ? range : [range]).map(r => SPECIAL_SUBNETS[r as Special] || [])
-      : Object.values(SPECIAL_SUBNETS)))
-
-    for (const subnet of subnets) {
-      if (subnet.family === ip.family && subnet.contains(ip)) return true
+    for (const matcher of SPECIAL_MATCHERS) {
+      const res = matcher(ip)
+      if (res) return res === range || !range || range.includes(res)
     }
     return false
   }
@@ -483,11 +479,17 @@ const ipv6fySubnet = (c: string) => {
   return [c, `${prefix}/${96 + Number(len)}`]
 }
 
-const SPECIAL_SUBNETS: Record<Special, Subnet[]> = fromEntries(
-  Object.entries(SPECIALS).map(([cat, cidrs]) => [
-    cat as Special,
-    ([] as Subnet[]).concat(...cidrs.map((c) => ipv6fySubnet(c).map((x) => Address.cidrSubnet(x)))),
-  ]))
+const SPECIAL_MATCHERS: ((addr: Raw) => Special | undefined)[] = []
+for (const [cat, cidrs] of Object.entries(SPECIALS)) {
+  for (const cidr of cidrs) {
+    for (const x of ipv6fySubnet(cidr)) {
+      const subnet = Address.cidrSubnet(x)
+      SPECIAL_MATCHERS.push((addr: Raw) =>
+        subnet.contains(addr) ? (cat as Special) : undefined
+      )
+    }
+  }
+}
 
 // -------------------------------------------------------
 // Legacy compatibility API

@@ -34,10 +34,6 @@ var getGlobal = function() {
   return Function("return this")();
 };
 var Buffer2 = getGlobal().Buffer || FakeBuffer;
-var fromEntries = Object.fromEntries || ((entries) => entries.reduce((obj, [key, val]) => {
-  obj[key] = val;
-  return obj;
-}, {}));
 
 // src/main/ts/core.ts
 var IPV4_LEN_LIM = 4 * 3 + 3;
@@ -402,9 +398,9 @@ var _Address = class _Address {
   }
   static isSpecial(addr, range) {
     const ip = _Address.from(addr);
-    const subnets = [].concat(...range ? (Array.isArray(range) ? range : [range]).map((r) => SPECIAL_SUBNETS[r] || []) : Object.values(SPECIAL_SUBNETS));
-    for (const subnet2 of subnets) {
-      if (subnet2.family === ip.family && subnet2.contains(ip)) return true;
+    for (const matcher of SPECIAL_MATCHERS) {
+      const res = matcher(ip);
+      if (res) return res === range || !range || range.includes(res);
     }
     return false;
   }
@@ -442,12 +438,17 @@ var ipv6fySubnet = (c) => {
   const prefix = `::ffff:${base}`;
   return [c, `${prefix}/${96 + Number(len)}`];
 };
-var SPECIAL_SUBNETS = fromEntries(
-  Object.entries(SPECIALS).map(([cat, cidrs]) => [
-    cat,
-    [].concat(...cidrs.map((c) => ipv6fySubnet(c).map((x) => Address.cidrSubnet(x))))
-  ])
-);
+var SPECIAL_MATCHERS = [];
+for (const [cat, cidrs] of Object.entries(SPECIALS)) {
+  for (const cidr2 of cidrs) {
+    for (const x of ipv6fySubnet(cidr2)) {
+      const subnet2 = Address.cidrSubnet(x);
+      SPECIAL_MATCHERS.push(
+        (addr) => subnet2.contains(addr) ? cat : void 0
+      );
+    }
+  }
+}
 var isPublic = Address.isPublic.bind(Address);
 var isPrivate = Address.isPrivate.bind(Address);
 var isEqual = Address.isEqual.bind(Address);
