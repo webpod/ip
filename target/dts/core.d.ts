@@ -37,7 +37,8 @@ export declare class Address {
     private static fromLong;
     private static fromBuffer;
     private static fromString;
-    private static ipv4ToGroups;
+    static fromIPv6(addr: string): Address;
+    private static fromIPv4;
     private static parseCidr;
     static normalizeFamily(family: string | number): Family;
     static normalizeToLong(addr: string, forceDec?: boolean): number;

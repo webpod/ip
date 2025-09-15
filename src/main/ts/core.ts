@@ -337,65 +337,66 @@ export class Address {
     if (addr === '::' ) return this.create(0n, 6, addr)
     if (addr === '0') return this.create(0n, 4, addr)
 
-    const single = !addr.includes(':')
-    if (single) {
-      if (addr.includes('.')) return this.fromLong(this.normalizeToLong(addr, isIPv4Candidate(addr)))
-      if (DEC_RE.test(addr)) return this.fromNumber(addr as `${bigint}`)
-      throw new Error(`Invalid address: ${addr}`)
-    }
+    return addr.includes(':')
+      ? this.fromIPv6(addr)
+      : this.fromIPv4(addr)
+  }
 
-    // Compressed zeros (::)
+  static fromIPv6(addr: string): Address {
+    const groups: number[] = []
+    const al = addr.length
+    let p = 0, gc = -1
+
+    // only one '::' allowed
     const sep = addr.indexOf('::')
-    if ((sep !== -1) && addr.indexOf('::', sep + 1) !== -1)
+    if (sep !== -1 && addr.indexOf('::', sep + 1) !== -1)
       throw new Error(`Invalid address: ${addr}`)
 
-    const h = sep === -1 ? addr : addr.slice(0, sep)
-    const t = sep === -1 ? undefined : addr.slice(sep + 2)
-    const heads = h ? h.split(':', 9) : []
-    const tails = t ? t.split(':', 9) : []
-    const diff = 8 - heads.length - tails.length
+    while (true) {
+      const i = addr.indexOf(':', p)
+      const last = i === -1
+      const end = last ? al : i
+      const v = addr.slice(p, end)
 
-    if (diff < 0 || diff === 0 && t) throw new Error(`Invalid address: ${addr}`)
+      if (v === '') {
+        if (sep === -1 || (end !== sep && end !== sep + 1 + +last))
+          throw new Error(`Invalid address: ${addr}`)
+        gc = groups.length
+      } else if (last && v.includes('.')) {
+        // embedded IPv4
+        if (
+          groups.length > 6 ||
+          gc === groups.length ||
+          (gc === -1 && groups.length !== 6) ||
+          groups.at(-1) !== 0xffff ||
+          groups.slice(0, -1).some(x => x !== 0)
+        ) throw new Error(`Invalid address: ${addr}`)
 
-    const groups = t === undefined ? heads : [
-      ...heads,
-      ...Array(diff).fill('0'),
-      ...tails,
-    ]
-    const last = groups[groups.length - 1]
-    if (last.includes('.')) {
-      if (!diff || groups[groups.length - 2] !== 'ffff' || groups.slice(0, -2).some(v => +v !== 0))
-        throw new Error(`Invalid address: ${addr}`)
+        const long = Address.normalizeToLong(v, true)
+        if (long === -1) throw new Error(`Invalid address: ${addr}`)
+        return this.create((0xffffn << 32n) | BigInt(long), 6, addr)
+      } else {
+        if (v.length > 4 || !HEX_RE.test(v)) throw new Error(`Invalid address: ${addr}`)
+        groups.push(parseInt(v, 16))
+      }
 
-      const [g6, g7] = this.ipv4ToGroups(last)
-      groups[5] = 'ffff'
-      groups[6] = g6
-      groups[7] = g7
+      if (last) break
+      p = i + 1
     }
-    if (groups.length !== 8) throw new Error(`Invalid address: ${addr}`)
+    if (gc === -1 ? groups.length !== 8 : groups.length > 7) throw new Error(`Invalid address: ${addr}`)
 
     let big = 0n
-    for (const part of groups) {
-      if (part.length > 4 || !HEX_RE.test(part)) throw new Error(`Invalid address: ${addr}`)
-      big = (big << 16n) + BigInt(parseInt(part, 16))
+    for (let i = 0; i < 8; i++) {
+      const part = i < gc ? groups[i] : i < gc + (8 - groups.length) ? 0 : groups[i - (8 - groups.length)]
+      big = (big << 16n) + BigInt(part)
     }
-
     return this.create(big, 6, addr)
   }
 
-  private static ipv4ToGroups(addr: string): string[] {
-    if (addr.length > IPV4_LEN_LIM) throw new Error(`Invalid address: ${addr}`)
-    const groups = addr.split('.', 5)
-    if (groups.length !== 4) throw new Error(`Invalid address: ${addr}`)
-    const nums = groups.map(p => {
-      const n = +p
-      if (n < 0 || n > 255 || !DEC_RE.test(p)) throw new Error(`Invalid address: ${addr}`)
-      return n
-    })
-    return [
-      ((nums[0] << 8) | nums[1]).toString(16),
-      ((nums[2] << 8) | nums[3]).toString(16),
-    ]
+  private static fromIPv4(addr: string): Address {
+    if (addr.includes('.')) return this.fromLong(this.normalizeToLong(addr, isIPv4Candidate(addr)))
+    if (DEC_RE.test(addr)) return this.fromNumber(addr as `${bigint}`)
+    throw new Error(`Invalid address: ${addr}`)
   }
 
   private static parseCidr = (cidr: string): [Address, Address] => {
@@ -419,13 +420,15 @@ export class Address {
 
   static normalizeToLong(addr: string, forceDec = false): number {
     const groups: number[] = []
-    let l = 0
     let p = 0
-    let i = -1
-    while (((i = addr.indexOf('.', p)) !== -1) || !l || p) {
-      if (l === 4) return -1
+
+    while (true) {
+      if (groups.length === 4) return -1
+      const i = addr.indexOf('.', p)
       const v = addr.slice(p, i === -1 ? addr.length : i)
-      if (isDec(v)) groups.push(+v)
+
+      if (isDec(v))
+        groups.push(+v)
       else {
         if (forceDec) return -1
         const radix = HEXX_RE.test(v) ? 16 : OCT_RE.test(v) ? 8 : -1
@@ -433,17 +436,20 @@ export class Address {
         groups.push(parseInt(v, radix))
       }
 
-      p = i + 1
-      l = groups.length
       if (i === -1) break
+      p = i + 1
     }
 
-    const [g0, g1, g2, g3] = groups
-    return l === 1 ? g0 :
-      l === 2 && g0 <= 0xff && g1 <= 0xffffff ?             ((g0 << 24) | (g1 & 0xffffff)) >>> 0 :
-      l === 3 && g0 <= 0xff && g1 <= 0xff && g2 <= 0xffff ? ((g0 << 24) | (g1 << 16) | (g2 & 0xffff)) >>> 0 :
-      (g0 | g1 | g2 | g3) >>> 8 === 0 ?                     ((g0 << 24) | (g1 << 16) | (g2 << 8) | g3) >>> 0 : -1
-}
+    const [g0, g1 = 0, g2 = 0, g3 = 0] = groups
+    switch (groups.length) {
+      case 1: return g0
+      case 2: return g0 <= 0xff && g1 <= 0xffffff ? ((g0 << 24) | g1) >>> 0 : -1
+      case 3: return g0 <= 0xff && g1 <= 0xff && g2 <= 0xffff ? ((g0 << 24) | (g1 << 16) | g2) >>> 0 : -1
+      case 4: return (g0 | g1 | g2 | g3) >>> 8 === 0 ? ((g0 << 24) | (g1 << 16) | (g2 << 8) | g3) >>> 0 : -1
+      default: return -1
+    }
+  }
+
 
   static isSpecial(addr: Raw, range?: Special | Special[]): boolean {
     const ip = Address.from(addr)
