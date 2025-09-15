@@ -39,7 +39,7 @@ Address | [`node:net`](undefined) | [`ip`](https://github.com/indutny/node-ip) |
 `::g` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | invalid hex digit after compression
 `2001:db8:85a3:0:0:8a2e:37023:7334` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | hextet exceeds 16 bits
 `::ffff:999.0.2.128` | ✓ | ❌ | ✓ | ✓ | ✓ | ✓ | invalid embedded IPv4
-`::ffff:192.0.2` | ✓ | ✓ | ❌ | ✓ | ✓ | ✓ | truncated IPv4 in mapped address
+`::ffff:192.0.2` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | truncated IPv4 in mapped address
 `2001:db8:::` | ✓ | ❌ | ✓ | ✓ | ✓ | ✓ | extra colon at end
 `` | ✓ | ❌ | ✓ | ✓ | ✓ | ✓ | empty string
 ## Private IP

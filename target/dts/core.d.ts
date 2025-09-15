@@ -41,7 +41,7 @@ export declare class Address {
     private static fromIPv4;
     private static parseCidr;
     static normalizeFamily(family: string | number): Family;
-    static normalizeToLong(addr: string, forceDec?: boolean): number;
+    static normalizeToLong(addr: string, strict?: boolean): number;
     static isSpecial(addr: Raw, range?: Special | Special[]): boolean;
     static isPrivate(addr: Raw): boolean;
     static isPublic(addr: Raw): boolean;

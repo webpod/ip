@@ -418,7 +418,7 @@ export class Address {
     throw new Error(`Invalid family: ${family}`)
   }
 
-  static normalizeToLong(addr: string, forceDec = false): number {
+  static normalizeToLong(addr: string, strict = false): number {
     const groups: number[] = []
     let p = 0
 
@@ -430,13 +430,16 @@ export class Address {
       if (isDec(v))
         groups.push(+v)
       else {
-        if (forceDec) return -1
+        if (strict) return -1
         const radix = HEXX_RE.test(v) ? 16 : OCT_RE.test(v) ? 8 : -1
         if (radix === -1) return -1
         groups.push(parseInt(v, radix))
       }
 
-      if (i === -1) break
+      if (i === -1) {
+        if (strict && (groups.length !== 4)) return -1
+        break
+      }
       p = i + 1
     }
 

@@ -75,6 +75,7 @@ describe('core', () => {
       ['abc.def.ghi.jkl', false],  // invalid chars
       [' 127.0.0.1 ', false],      // whitespace not allowed
       ['192.168.01.1', false],     // leading zero
+      ['192.168', false],
     ]
 
     for (const [input, expected] of cases) {
@@ -94,6 +95,7 @@ describe('core', () => {
       ['ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff', true], // full expanded IPv6
       ['1.2.3.4', false],             // IPv4
       ['::ffff:127.0.0.1', true],     // IPv4-mapped IPv6 (valid IPv6 string!)
+      ['::ffff:192.168', false],      // truncated IPv4 in mapped address
       ['12345::1', false],            // too big hextet
       ['abcd::abcd::1', false],       // double compression
       ['0:0:0:0:0:0:0:0:0:0', false], // extra bits
