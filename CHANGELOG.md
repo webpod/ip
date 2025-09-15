@@ -1,3 +1,8 @@
+## [0.2.4](https://github.com/webpod/ip/compare/v0.2.3...v0.2.4) (2025-09-15)
+
+### Fixes & improvements
+* perf: IPv4 flow optimizations (#17) ([657fbb4](https://github.com/webpod/ip/commit/657fbb41e2df64dd9135026e1d0129258a254285))
+
 ## [0.2.3](https://github.com/webpod/ip/compare/v0.2.2...v0.2.3) (2025-09-12)
 
 ### Fixes & improvements
