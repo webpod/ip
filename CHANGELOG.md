@@ -1,3 +1,8 @@
+## [0.2.7](https://github.com/webpod/ip/compare/v0.2.6...v0.2.7) (2025-09-15)
+
+### Fixes & improvements
+* fix: disallow truncated IPv4 mapped IPv6 (#19) ([d7c0a60](https://github.com/webpod/ip/commit/d7c0a60d9cc7f859962b6ca164d169d19add066c))
+
 ## [0.2.6](https://github.com/webpod/ip/compare/v0.2.5...v0.2.6) (2025-09-15)
 
 ### Fixes & improvements
