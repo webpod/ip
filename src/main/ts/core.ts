@@ -342,7 +342,7 @@ export class Address {
       : this.fromIPv4(addr)
   }
 
-  static fromIPv6(addr: string): Address {
+  private static fromIPv6(addr: string): Address {
     const groups: number[] = []
     const al = addr.length
     let p = 0, gc = -1
