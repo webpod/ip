@@ -368,7 +368,7 @@ export class Address {
           groups.length > 6 ||
           gc === groups.length ||
           (gc === -1 && groups.length !== 6) ||
-          groups.at(-1) !== 0xffff ||
+          groups[groups.length - 1] !== 0xffff ||
           groups.slice(0, -1).some(x => x !== 0)
         ) throw new Error(`Invalid address: ${addr}`)
 

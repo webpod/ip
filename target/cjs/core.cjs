@@ -367,7 +367,7 @@ var _Address = class _Address {
           throw new Error(`Invalid address: ${addr}`);
         gc = groups.length;
       } else if (last && v.includes(".")) {
-        if (groups.length > 6 || gc === groups.length || gc === -1 && groups.length !== 6 || groups.at(-1) !== 65535 || groups.slice(0, -1).some((x) => x !== 0)) throw new Error(`Invalid address: ${addr}`);
+        if (groups.length > 6 || gc === groups.length || gc === -1 && groups.length !== 6 || groups[groups.length - 1] !== 65535 || groups.slice(0, -1).some((x) => x !== 0)) throw new Error(`Invalid address: ${addr}`);
         const long = _Address.normalizeToLong(v, true);
         if (long === -1) throw new Error(`Invalid address: ${addr}`);
         return this.create(/* @__PURE__ */ BigInt("0xffff") << /* @__PURE__ */ BigInt("32") | BigInt(long), 6, addr);
