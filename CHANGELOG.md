@@ -1,3 +1,8 @@
+## [0.2.5](https://github.com/webpod/ip/compare/v0.2.4...v0.2.5) (2025-09-15)
+
+### Fixes & improvements
+* docs: describe IP tools coherence ([a74464a](https://github.com/webpod/ip/commit/a74464ae300ef3eee1b82f8073c2d340e5aa17a2))
+
 ## [0.2.4](https://github.com/webpod/ip/compare/v0.2.3...v0.2.4) (2025-09-15)
 
 ### Fixes & improvements
