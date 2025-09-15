@@ -3,8 +3,9 @@
 > Lite IP tools
 
 This lib is an alternative for the [`ip`](https://www.npmjs.com/package/ip) package which resolves [many upstream issues](https://github.com/indutny/node-ip/issues).
-* Rewritten in TypeScript
+* Reforged in TypeScript
 * Provides both ESM and CJS entries
+* Exposes browser-compatible `./core`
 * Eliminates annoying vulnerability [CVE-2024-29415](https://github.com/advisories/GHSA-2p57-rm9w-gvfp)
 * Brings various fixes and improvements
 
@@ -30,7 +31,7 @@ Temporary workaround to avoid refactoring is using `overrides` / `resolutions` i
 Browser-compatible core build is available as `@webpod/ip/core`: it omits `node:os` dependency and polyfills the `Buffer` API.
 
 ## Usage
-The API is fully compatible with the latest `ip@2.0.1`
+The API is fully compatible with the latest `ip@2.0.1` but enforces stricter validations. See [coherence.md](./COHERENCE.md) for details.
 
 ```ts
 import ip from '@webpod/ip'

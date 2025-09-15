@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { tools } from '../test/bench/stand/index.ts'
+import { tools, type Checker } from '../test/bench/stand/index.ts'
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 const outfile = path.resolve(__dirname, '../../COHERENCE.md')
@@ -128,7 +128,7 @@ let output = `# Coherence across libraries
 
 for (const {title, method, cases} of suites) {
   const apis = Object.entries(tools).filter(([_, methods]) => method in methods)
-  const thead = ['Address', ...apis.map(([name]) => name), 'Comment']
+  const thead = ['Address', ...apis.map(([name, {ref}]) => `[\`${name}\`](${ref})`), 'Comment']
   output += `## ${title}
 ${thead.join(' | ')}
 ${thead.map(() => '---').join(' | ')}
@@ -136,7 +136,7 @@ ${thead.map(() => '---').join(' | ')}
 
   for (const [addr, expected, comment] of cases) {
     const results = apis.map(([_, methods]) => {
-      const res = methods[method](addr)
+      const res = (methods[method] as Checker)(addr)
       if (res === null) return 'n/a'
       return res === expected ? '✓' : '❌'
     })

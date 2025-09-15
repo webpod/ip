@@ -5,19 +5,21 @@ import * as isip from 'is-ip'
 import ipaddrjs from 'ipaddr.js'
 import * as ipa from 'ip-address'
 
-type Checker = (addr: string) => boolean | null
+export type Checker = (addr: string) => boolean | null
 
-export const tools: Record<string, Record<string, Checker>> = {
+export const tools: Record<string, Record<string, Checker | string>> = {
   'node:net': {
     isIPv4: (addr) => net.isIPv4(addr),
     isIPv6: (addr) => net.isIPv6(addr),
   },
   ip: {
+    ref: 'https://github.com/indutny/node-ip',
     isIPv4: (addr) => ip.isV4Format(addr),
     isIPv6: (addr) => ip.isV6Format(addr),
     isPrivate: (addr) => ip.isPrivate(addr),
   },
   '@webpod/ip': {
+    ref: 'https://github.com/webpod/ip',
     isIPv4: (addr) => webpodip.isV4Format(addr),
     isIPv6: (addr) => webpodip.isV6Format(addr),
     isPrivate: (addr) => {
@@ -27,10 +29,12 @@ export const tools: Record<string, Record<string, Checker>> = {
   },
 
   'is-ip': {
+    ref: 'https://github.com/sindresorhus/is-ip',
     isIPv4: (addr) => isip.isIPv4(addr),
     isIPv6: (addr) => isip.isIPv6(addr),
   },
   'ipaddr.js': {
+    ref: 'https://github.com/whitequark/ipaddr.js/',
     isIPv4: (addr) => {
       try { return ipaddrjs.parse(addr).kind() === 'ipv4' }
       catch { return false }
@@ -47,6 +51,7 @@ export const tools: Record<string, Record<string, Checker>> = {
     },
   },
   'ip-address': {
+    ref: 'https://github.com/beaugunderson/ip-address',
     isIPv4: (addr) => {
       return ipa.Address4.isValid(addr)
     },
