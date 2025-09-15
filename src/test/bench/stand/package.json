@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "name": "@webpod/ip-bench-stand",
+  "type": "module",
+  "devDependencies": {
+    "@types/ip": "^1.1.3",
+    "@webpod/ip": "file:../../../..",
+    "ip": "^2.0.1",
+    "ip-address": "^10.0.1",
+    "ipaddr.js": "^2.2.0",
+    "is-ip": "^5.0.1"
+  }
+}
