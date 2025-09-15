@@ -40,7 +40,7 @@ export declare class Address {
     private static ipv4ToGroups;
     private static parseCidr;
     static normalizeFamily(family: string | number): Family;
-    static normalizeToLong(addr: string): number;
+    static normalizeToLong(addr: string, forceDec?: boolean): number;
     static isSpecial(addr: Raw, range?: Special | Special[]): boolean;
     static isPrivate(addr: Raw): boolean;
     static isPublic(addr: Raw): boolean;

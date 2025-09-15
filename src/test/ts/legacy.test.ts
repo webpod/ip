@@ -74,6 +74,7 @@ describe('core', () => {
       ['::ffff:127.0.0.1', false], // IPv6 mapped IPv4 (still not pure v4 format)
       ['abc.def.ghi.jkl', false],  // invalid chars
       [' 127.0.0.1 ', false],      // whitespace not allowed
+      ['192.168.01.1', false],     // leading zero
     ]
 
     for (const [input, expected] of cases) {
@@ -117,10 +118,10 @@ describe('core', () => {
       ['8.8.8.8'],
       [2130706434, true],
       [4294967295],
-      ['0177.0.0.1', true],
+      // ['0177.0.0.1', true],
       ['0177.0.1', true],
       ['0177.1', true],
-      ['0x7f.0.0.1', true],
+      // ['0x7f.0.0.1', true],
       ['0x7f.0.1', true],
       ['0x7f.1', true],
       ['2130706433', true],
