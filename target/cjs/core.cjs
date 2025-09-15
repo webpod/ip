@@ -397,7 +397,7 @@ var _Address = class _Address {
     if (f == "6" || f === "ipv6") return 6;
     throw new Error(`Invalid family: ${family}`);
   }
-  static normalizeToLong(addr, forceDec = false) {
+  static normalizeToLong(addr, strict = false) {
     const groups = [];
     let p = 0;
     while (true) {
@@ -407,12 +407,15 @@ var _Address = class _Address {
       if (isDec(v))
         groups.push(+v);
       else {
-        if (forceDec) return -1;
+        if (strict) return -1;
         const radix = HEXX_RE.test(v) ? 16 : OCT_RE.test(v) ? 8 : -1;
         if (radix === -1) return -1;
         groups.push(parseInt(v, radix));
       }
-      if (i === -1) break;
+      if (i === -1) {
+        if (strict && groups.length !== 4) return -1;
+        break;
+      }
       p = i + 1;
     }
     const [g0, g1 = 0, g2 = 0, g3 = 0] = groups;
