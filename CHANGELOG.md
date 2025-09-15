@@ -1,3 +1,8 @@
+## [0.2.6](https://github.com/webpod/ip/compare/v0.2.5...v0.2.6) (2025-09-15)
+
+### Fixes & improvements
+* perf: optimize IPv6 flow (#18) ([49ae6d7](https://github.com/webpod/ip/commit/49ae6d75fd56c6d97a69516011148e97507bf87a))
+
 ## [0.2.5](https://github.com/webpod/ip/compare/v0.2.4...v0.2.5) (2025-09-15)
 
 ### Fixes & improvements
