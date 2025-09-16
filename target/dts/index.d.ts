@@ -50,6 +50,9 @@ export declare const ip: {
     normalizeToLong: (typeof core.Address)["normalizeToLong"];
     isV4Format: (addr: string) => boolean;
     isV6Format: (addr: string) => boolean;
+    isIPv4: (addr: string) => boolean;
+    isIPv6: (addr: string) => boolean;
+    isIP: (addr: string) => boolean;
     addresses: (name?: string, family?: string | number) => string[];
     address: (name?: string, family?: string) => string | undefined;
 };

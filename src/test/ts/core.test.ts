@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import {test, describe} from 'vitest'
-import {Address, type Special} from '../../main/ts/core.ts'
+import {Address, type Special, isIP, isIPv4, isIPv6} from '../../main/ts/core.ts'
 
 describe('extra', () => {
   describe('class Address', () => {
@@ -589,6 +589,16 @@ describe('extra', () => {
           })
         }
       })
+    })
+  })
+
+  describe('shortcuts', () => {
+    test('isIP(), isIPv4(), isIPv6()', () => {
+      assert.equal(isIP('foo'), false)
+      assert.equal(isIP('127.0.0.1'), true)
+      assert.equal(isIP('::1234:ffff'), true)
+      assert.equal(isIPv4('127.0.0.1'), true)
+      assert.equal(isIPv6('::1234:ffff'), true)
     })
   })
 })

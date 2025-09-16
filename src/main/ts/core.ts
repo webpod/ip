@@ -1,4 +1,4 @@
-import { type BufferLike, Buffer, fromEntries } from './polyfill.ts'
+import { type BufferLike, Buffer } from './polyfill.ts'
 
 export type { BufferLike } from './polyfill.ts'
 
@@ -62,19 +62,6 @@ const SPECIALS: Record<Special, string[]> = {
     '3fff::/20',      // IPv6 reserved
     '5f00::/16',      // IPv6 reserved
   ],
-}
-
-const isDec = (str: string): boolean => {
-  if (str === '0') return true
-  if (!str || str[0] === '0') return false
-  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); if (c < 48 || c > 57) return false }
-  return true
-}
-
-const isIPv4Candidate = (str: string): boolean => {
-  let dots = 0
-  for (let i = 0; i < str.length; i++) { if (str[i] === '.' && ++dots > 3) return false }
-  return dots === 3
 }
 
 // -------------------------------------------------------
@@ -469,13 +456,26 @@ export class Address {
     return false
   }
 
-  static isPrivate(addr: Raw) {
+  static isPrivate(addr: Raw): boolean {
     return this.isSpecial(addr, ['private', 'linklocal', 'loopback', 'unspecified'])
   }
 
-  static isPublic(addr: Raw) {
+  static isPublic(addr: Raw): boolean {
     return !this.isPrivate(addr)
   }
+}
+
+const isDec = (str: string): boolean => {
+  if (str === '0') return true
+  if (!str || str[0] === '0') return false
+  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); if (c < 48 || c > 57) return false }
+  return true
+}
+
+const isIPv4Candidate = (str: string): boolean => {
+  let dots = 0
+  for (let i = 0; i < str.length; i++) { if (str[i] === '.' && ++dots > 3) return false }
+  return dots === 3
 }
 
 const ipv6fySubnet = (c: string) => {
@@ -517,6 +517,8 @@ type LegacySubnet = Omit<Subnet, 'numHosts' | 'length'> & {
   numHosts: number | bigint
   length: number | bigint
 }
+type Checker = (addr: string) => boolean
+
 export function subnet(addr: Raw, smask: Raw): LegacySubnet {
   const sub = Address.subnet(addr, smask)
   return sub.family === 6 ? sub : {...sub, numHosts: Number(sub.numHosts), length:   Number(sub.length)}
@@ -549,11 +551,11 @@ export function fromLong(n: number | bigint | `${bigint}`): string {
   return Address.from(n).toString()
 }
 
-export const isV4Format = (addr: string)=> {
+export const isV4Format: Checker = (addr: string): boolean=> {
   return isIPv4Candidate(addr) && Address.normalizeToLong(addr, true) !== -1
 }
 
-export const isV6Format = (addr: string) => {
+export const isV6Format: Checker = (addr: string): boolean => {
   if (!`${addr}`.includes(':')) return false
 
   try {
@@ -562,6 +564,10 @@ export const isV6Format = (addr: string) => {
     return false
   }
 }
+
+export const isIPv4: Checker = isV4Format
+export const isIPv6: Checker = isV6Format
+export const isIP: Checker = (addr: string): boolean => isV4Format(addr) || isV6Format(addr)
 
 export function isLoopback(addr: Raw): boolean {
   return Address.isSpecial(addr, ['loopback', 'unspecified', 'linklocal'])

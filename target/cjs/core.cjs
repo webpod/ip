@@ -17,6 +17,9 @@ __export(core_exports, {
   fromLong: () => fromLong,
   fromPrefixLen: () => fromPrefixLen,
   isEqual: () => isEqual,
+  isIP: () => isIP,
+  isIPv4: () => isIPv4,
+  isIPv6: () => isIPv6,
   isLoopback: () => isLoopback,
   isPrivate: () => isPrivate,
   isPublic: () => isPublic,
@@ -153,22 +156,6 @@ var SPECIALS = {
     "5f00::/16"
     // IPv6 reserved
   ]
-};
-var isDec = (str) => {
-  if (str === "0") return true;
-  if (!str || str[0] === "0") return false;
-  for (let i = 0; i < str.length; i++) {
-    const c = str.charCodeAt(i);
-    if (c < 48 || c > 57) return false;
-  }
-  return true;
-};
-var isIPv4Candidate = (str) => {
-  let dots = 0;
-  for (let i = 0; i < str.length; i++) {
-    if (str[i] === "." && ++dots > 3) return false;
-  }
-  return dots === 3;
 };
 var _Address = class _Address {
   constructor() {
@@ -470,6 +457,22 @@ __publicField(_Address, "parseCidr", (cidr2) => {
   return [addr, m];
 });
 var Address = _Address;
+var isDec = (str) => {
+  if (str === "0") return true;
+  if (!str || str[0] === "0") return false;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    if (c < 48 || c > 57) return false;
+  }
+  return true;
+};
+var isIPv4Candidate = (str) => {
+  let dots = 0;
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === "." && ++dots > 3) return false;
+  }
+  return dots === 3;
+};
 var ipv6fySubnet = (c) => {
   if (c.includes(":")) return [c];
   const [base, len] = c.split("/");
@@ -532,6 +535,9 @@ var isV6Format = (addr) => {
     return false;
   }
 };
+var isIPv4 = isV4Format;
+var isIPv6 = isV6Format;
+var isIP = (addr) => isV4Format(addr) || isV6Format(addr);
 function isLoopback(addr) {
   return Address.isSpecial(addr, ["loopback", "unspecified", "linklocal"]);
 }
@@ -547,6 +553,9 @@ function loopback(family = 4) {
   fromLong,
   fromPrefixLen,
   isEqual,
+  isIP,
+  isIPv4,
+  isIPv6,
   isLoopback,
   isPrivate,
   isPublic,

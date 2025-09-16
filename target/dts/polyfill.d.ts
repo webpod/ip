@@ -6,6 +6,3 @@ export declare const FakeBuffer: {
     alloc: (size: number, fill?: number) => BufferLike;
 };
 export declare const Buffer: any;
-export declare const fromEntries: <K extends PropertyKey, V>(entries: readonly (readonly [K, V])[]) => {
-    [P in K]: V;
-};

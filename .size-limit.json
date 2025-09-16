@@ -1,0 +1,50 @@
+[
+  {
+    "name": "@webpod/ip",
+    "path": [
+      "target",
+      "!target/coverage",
+      "README.md",
+      "LICENSE"
+    ],
+    "limit": "55.60 kB",
+    "brotli": false,
+    "gzip": false
+  },
+  {
+    "name": "zipped",
+    "path": [
+      "target",
+      "!target/coverage",
+      "README.md",
+      "LICENSE"
+    ],
+    "limit": "16.80 kB",
+    "gzip": true
+  },
+  {
+    "name": "cjs",
+    "path": [
+      "target/cjs"
+    ],
+    "limit": "23.85 kB",
+    "brotli": false,
+    "gzip": false
+  },
+  {
+    "name": "esm",
+    "path": [
+      "target/esm"
+    ],
+    "limit": "20.0 kB",
+    "brotli": false,
+    "gzip": false
+  },
+  {
+    "name": "libdefs",
+    "path": "target/dts",
+    "limit": "6.50 kB",
+    "brotli": false,
+    "gzip": false
+  }
+]
