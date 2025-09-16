@@ -1,3 +1,8 @@
+## [0.3.0](https://github.com/webpod/ip/compare/v0.2.7...v0.3.0) (2025-09-16)
+
+### Features
+* feat: introduce `Address.range` getter (#20) ([1f471b4](https://github.com/webpod/ip/commit/1f471b4ed031685cb633ac2fb6d40b0f802f4e07))
+
 ## [0.2.7](https://github.com/webpod/ip/compare/v0.2.6...v0.2.7) (2025-09-15)
 
 ### Fixes & improvements
