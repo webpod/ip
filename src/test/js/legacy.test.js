@@ -20,7 +20,7 @@ import assert from 'node:assert'
 import net from 'node:net'
 import os from 'node:os'
 import { it, describe } from 'vitest'
-import ip from '@webpod/ip'
+import ip from '../../../lib/ip.js'
 
 describe('IP library for node.js', () => {
   describe('toBuffer()/toString() methods', () => {
