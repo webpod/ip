@@ -47,16 +47,3 @@ const getGlobal = function() {
 }
 
 export const Buffer = getGlobal().Buffer || FakeBuffer
-
-
-// -------------------------------------------------------
-// Nodejs.10x polyfills
-// -------------------------------------------------------
-
-export const fromEntries: <K extends PropertyKey, V>(entries: readonly (readonly [K, V])[]) => { [P in K]: V } =
-  Object.fromEntries ||
-  (<K extends PropertyKey, V>(entries: readonly (readonly [K, V])[]) =>
-    entries.reduce((obj, [key, val]) => {
-      (obj as any)[key] = val
-      return obj
-    }, {} as { [P in K]: V }))

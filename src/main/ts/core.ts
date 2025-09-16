@@ -1,4 +1,4 @@
-import { type BufferLike, Buffer, fromEntries } from './polyfill.ts'
+import { type BufferLike, Buffer } from './polyfill.ts'
 
 export type { BufferLike } from './polyfill.ts'
 
@@ -62,19 +62,6 @@ const SPECIALS: Record<Special, string[]> = {
     '3fff::/20',      // IPv6 reserved
     '5f00::/16',      // IPv6 reserved
   ],
-}
-
-const isDec = (str: string): boolean => {
-  if (str === '0') return true
-  if (!str || str[0] === '0') return false
-  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); if (c < 48 || c > 57) return false }
-  return true
-}
-
-const isIPv4Candidate = (str: string): boolean => {
-  let dots = 0
-  for (let i = 0; i < str.length; i++) { if (str[i] === '.' && ++dots > 3) return false }
-  return dots === 3
 }
 
 // -------------------------------------------------------
@@ -476,6 +463,19 @@ export class Address {
   static isPublic(addr: Raw) {
     return !this.isPrivate(addr)
   }
+}
+
+const isDec = (str: string): boolean => {
+  if (str === '0') return true
+  if (!str || str[0] === '0') return false
+  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); if (c < 48 || c > 57) return false }
+  return true
+}
+
+const isIPv4Candidate = (str: string): boolean => {
+  let dots = 0
+  for (let i = 0; i < str.length; i++) { if (str[i] === '.' && ++dots > 3) return false }
+  return dots === 3
 }
 
 const ipv6fySubnet = (c: string) => {
