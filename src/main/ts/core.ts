@@ -456,11 +456,11 @@ export class Address {
     return false
   }
 
-  static isPrivate(addr: Raw) {
+  static isPrivate(addr: Raw): boolean {
     return this.isSpecial(addr, ['private', 'linklocal', 'loopback', 'unspecified'])
   }
 
-  static isPublic(addr: Raw) {
+  static isPublic(addr: Raw): boolean {
     return !this.isPrivate(addr)
   }
 }
@@ -517,6 +517,8 @@ type LegacySubnet = Omit<Subnet, 'numHosts' | 'length'> & {
   numHosts: number | bigint
   length: number | bigint
 }
+type Checker = (addr: string) => boolean
+
 export function subnet(addr: Raw, smask: Raw): LegacySubnet {
   const sub = Address.subnet(addr, smask)
   return sub.family === 6 ? sub : {...sub, numHosts: Number(sub.numHosts), length:   Number(sub.length)}
@@ -549,11 +551,11 @@ export function fromLong(n: number | bigint | `${bigint}`): string {
   return Address.from(n).toString()
 }
 
-export const isV4Format = (addr: string): boolean=> {
+export const isV4Format: Checker = (addr: string): boolean=> {
   return isIPv4Candidate(addr) && Address.normalizeToLong(addr, true) !== -1
 }
 
-export const isV6Format = (addr: string): boolean => {
+export const isV6Format: Checker = (addr: string): boolean => {
   if (!`${addr}`.includes(':')) return false
 
   try {
@@ -563,9 +565,9 @@ export const isV6Format = (addr: string): boolean => {
   }
 }
 
-export const isIPv4 = isV4Format
-export const isIPv6 = isV6Format
-export const isIP = (addr: string): boolean => isV4Format(addr) || isV6Format(addr)
+export const isIPv4: Checker = isV4Format
+export const isIPv6: Checker = isV6Format
+export const isIP: Checker = (addr: string): boolean => isV4Format(addr) || isV6Format(addr)
 
 export function isLoopback(addr: Raw): boolean {
   return Address.isSpecial(addr, ['loopback', 'unspecified', 'linklocal'])
