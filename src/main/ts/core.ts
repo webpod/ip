@@ -14,19 +14,6 @@ const HEXX_RE = /^0x[0-9a-f]+$/
 const DEC_RE = /^(?:0|[1-9][0-9]*)$/
 const OCT_RE = /^0[0-7]+$/
 
-const isDec = (str: string): boolean => {
-  if (str === '0') return true
-  if (!str || str[0] === '0') return false
-  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); if (c < 48 || c > 57) return false }
-  return true
-}
-
-function isIPv4Candidate(str: string): boolean {
-  let dots = 0
-  for (let i = 0; i < str.length; i++) { if (str[i] === '.' && ++dots > 3) return false }
-  return dots === 3
-}
-
 // https://en.wikipedia.org/wiki/Reserved_IP_addresses
 export type Special = 'loopback' | 'private' | 'linklocal' | 'multicast' | 'documentation' | 'reserved' | 'unspecified'
 const SPECIALS: Record<Special, string[]> = {
@@ -75,6 +62,19 @@ const SPECIALS: Record<Special, string[]> = {
     '3fff::/20',      // IPv6 reserved
     '5f00::/16',      // IPv6 reserved
   ],
+}
+
+const isDec = (str: string): boolean => {
+  if (str === '0') return true
+  if (!str || str[0] === '0') return false
+  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); if (c < 48 || c > 57) return false }
+  return true
+}
+
+const isIPv4Candidate = (str: string): boolean => {
+  let dots = 0
+  for (let i = 0; i < str.length; i++) { if (str[i] === '.' && ++dots > 3) return false }
+  return dots === 3
 }
 
 // -------------------------------------------------------
@@ -153,6 +153,13 @@ export class Address {
   toLong(): number {
     if (this.big > IPV4_MAX) throw new Error(`Address is wider than IPv4: ${this}`)
     return Number(this.big)
+  }
+
+  get range(): Special | undefined {
+    for (const matcher of SPECIAL_MATCHERS) {
+      const res = matcher(this)
+      if (res) return res
+    }
   }
 
   private static create(big: bigint, family: Family, raw: Raw): Address {
@@ -453,15 +460,11 @@ export class Address {
     }
   }
 
-
   static isSpecial(addr: Raw, range?: Special | Special[]): boolean {
     const ip = Address.from(addr)
-    const subnets = ([] as Subnet[]).concat(...(range
-      ? (Array.isArray(range) ? range : [range]).map(r => SPECIAL_SUBNETS[r as Special] || [])
-      : Object.values(SPECIAL_SUBNETS)))
-
-    for (const subnet of subnets) {
-      if (subnet.family === ip.family && subnet.contains(ip)) return true
+    for (const matcher of SPECIAL_MATCHERS) {
+      const res = matcher(ip)
+      if (res) return res === range || !range || range.includes(res)
     }
     return false
   }
@@ -483,11 +486,15 @@ const ipv6fySubnet = (c: string) => {
   return [c, `${prefix}/${96 + Number(len)}`]
 }
 
-const SPECIAL_SUBNETS: Record<Special, Subnet[]> = fromEntries(
-  Object.entries(SPECIALS).map(([cat, cidrs]) => [
-    cat as Special,
-    ([] as Subnet[]).concat(...cidrs.map((c) => ipv6fySubnet(c).map((x) => Address.cidrSubnet(x)))),
-  ]))
+const SPECIAL_MATCHERS: ((addr: Address) => Special | undefined)[] = []
+for (const [cat, cidrs] of Object.entries(SPECIALS)) {
+  for (const cidr of cidrs) {
+    for (const x of ipv6fySubnet(cidr)) {
+      const subnet = Address.cidrSubnet(x)
+      SPECIAL_MATCHERS.push((addr: Address) => addr.family === subnet.family && subnet.contains(addr) ? (cat as Special) : undefined)
+    }
+  }
+}
 
 // -------------------------------------------------------
 // Legacy compatibility API

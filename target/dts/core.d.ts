@@ -23,6 +23,7 @@ export declare class Address {
     toArray(): number[];
     toString(family?: Family | string | number, mapped?: boolean): string;
     toLong(): number;
+    get range(): Special | undefined;
     private static create;
     static from(raw: Raw): Address;
     static mask(addr: Raw, mask: Raw): string;

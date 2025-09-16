@@ -123,10 +123,12 @@ addr6.toString(4)   // '0.0.0.1'
 // Specific ranges check
 // -------------------------------------------------------
 
+Address.from('127.0.0.1').range                   // 'loopback'
+Address.from('192.0.2.10').range                  // 'documentation'
+
 Address.isSpecial('127.0.0.1')                    // true
 Address.isSpecial('127.0.0.1', 'loopback')        // true
 Address.isSpecial('127.0.0.1', 'documentation')   // false
-
 Address.isSpecial('1.2.3.4')                      // false
 ```
 

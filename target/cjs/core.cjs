@@ -66,10 +66,6 @@ var getGlobal = function() {
   return Function("return this")();
 };
 var Buffer2 = getGlobal().Buffer || FakeBuffer;
-var fromEntries = Object.fromEntries || ((entries) => entries.reduce((obj, [key, val]) => {
-  obj[key] = val;
-  return obj;
-}, {}));
 
 // src/main/ts/core.ts
 var IPV4_LEN_LIM = 4 * 3 + 3;
@@ -82,22 +78,6 @@ var HEX_RE = /^[0-9a-fA-F]+$/;
 var HEXX_RE = /^0x[0-9a-f]+$/;
 var DEC_RE = /^(?:0|[1-9][0-9]*)$/;
 var OCT_RE = /^0[0-7]+$/;
-var isDec = (str) => {
-  if (str === "0") return true;
-  if (!str || str[0] === "0") return false;
-  for (let i = 0; i < str.length; i++) {
-    const c = str.charCodeAt(i);
-    if (c < 48 || c > 57) return false;
-  }
-  return true;
-};
-function isIPv4Candidate(str) {
-  let dots = 0;
-  for (let i = 0; i < str.length; i++) {
-    if (str[i] === "." && ++dots > 3) return false;
-  }
-  return dots === 3;
-}
 var SPECIALS = {
   unspecified: [
     "0.0.0.0/8",
@@ -174,6 +154,22 @@ var SPECIALS = {
     // IPv6 reserved
   ]
 };
+var isDec = (str) => {
+  if (str === "0") return true;
+  if (!str || str[0] === "0") return false;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    if (c < 48 || c > 57) return false;
+  }
+  return true;
+};
+var isIPv4Candidate = (str) => {
+  let dots = 0;
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === "." && ++dots > 3) return false;
+  }
+  return dots === 3;
+};
 var _Address = class _Address {
   constructor() {
     __publicField(this, "raw");
@@ -221,6 +217,12 @@ var _Address = class _Address {
   toLong() {
     if (this.big > IPV4_MAX) throw new Error(`Address is wider than IPv4: ${this}`);
     return Number(this.big);
+  }
+  get range() {
+    for (const matcher of SPECIAL_MATCHERS) {
+      const res = matcher(this);
+      if (res) return res;
+    }
   }
   static create(big, family, raw) {
     const o = Object.create(this.prototype);
@@ -434,9 +436,9 @@ var _Address = class _Address {
   }
   static isSpecial(addr, range) {
     const ip = _Address.from(addr);
-    const subnets = [].concat(...range ? (Array.isArray(range) ? range : [range]).map((r) => SPECIAL_SUBNETS[r] || []) : Object.values(SPECIAL_SUBNETS));
-    for (const subnet2 of subnets) {
-      if (subnet2.family === ip.family && subnet2.contains(ip)) return true;
+    for (const matcher of SPECIAL_MATCHERS) {
+      const res = matcher(ip);
+      if (res) return res === range || !range || range.includes(res);
     }
     return false;
   }
@@ -474,12 +476,15 @@ var ipv6fySubnet = (c) => {
   const prefix = `::ffff:${base}`;
   return [c, `${prefix}/${96 + Number(len)}`];
 };
-var SPECIAL_SUBNETS = fromEntries(
-  Object.entries(SPECIALS).map(([cat, cidrs]) => [
-    cat,
-    [].concat(...cidrs.map((c) => ipv6fySubnet(c).map((x) => Address.cidrSubnet(x))))
-  ])
-);
+var SPECIAL_MATCHERS = [];
+for (const [cat, cidrs] of Object.entries(SPECIALS)) {
+  for (const cidr2 of cidrs) {
+    for (const x of ipv6fySubnet(cidr2)) {
+      const subnet2 = Address.cidrSubnet(x);
+      SPECIAL_MATCHERS.push((addr) => addr.family === subnet2.family && subnet2.contains(addr) ? cat : void 0);
+    }
+  }
+}
 var isPublic = Address.isPublic.bind(Address);
 var isPrivate = Address.isPrivate.bind(Address);
 var isEqual = Address.isEqual.bind(Address);
