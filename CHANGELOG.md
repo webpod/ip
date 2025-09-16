@@ -1,3 +1,8 @@
+## [0.4.1](https://github.com/webpod/ip/compare/v0.4.0...v0.4.1) (2025-09-16)
+
+### Fixes & improvements
+* fix: touch `lib/ip.js` for backward compat (#22) ([53254ce](https://github.com/webpod/ip/commit/53254ce7652c96deadc36a1abdc9ed213e4a3b71))
+
 ## [0.4.0](https://github.com/webpod/ip/compare/v0.3.0...v0.4.0) (2025-09-16)
 
 ### Features
