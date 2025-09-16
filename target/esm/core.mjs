@@ -46,22 +46,6 @@ var HEX_RE = /^[0-9a-fA-F]+$/;
 var HEXX_RE = /^0x[0-9a-f]+$/;
 var DEC_RE = /^(?:0|[1-9][0-9]*)$/;
 var OCT_RE = /^0[0-7]+$/;
-var isDec = (str) => {
-  if (str === "0") return true;
-  if (!str || str[0] === "0") return false;
-  for (let i = 0; i < str.length; i++) {
-    const c = str.charCodeAt(i);
-    if (c < 48 || c > 57) return false;
-  }
-  return true;
-};
-function isIPv4Candidate(str) {
-  let dots = 0;
-  for (let i = 0; i < str.length; i++) {
-    if (str[i] === "." && ++dots > 3) return false;
-  }
-  return dots === 3;
-}
 var SPECIALS = {
   unspecified: [
     "0.0.0.0/8",
@@ -137,6 +121,22 @@ var SPECIALS = {
     "5f00::/16"
     // IPv6 reserved
   ]
+};
+var isDec = (str) => {
+  if (str === "0") return true;
+  if (!str || str[0] === "0") return false;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    if (c < 48 || c > 57) return false;
+  }
+  return true;
+};
+var isIPv4Candidate = (str) => {
+  let dots = 0;
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === "." && ++dots > 3) return false;
+  }
+  return dots === 3;
 };
 var _Address = class _Address {
   constructor() {

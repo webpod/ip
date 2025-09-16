@@ -67,6 +67,18 @@ describe('extra', () => {
           })
         }
       })
+
+      test('range', () => {
+        const cases: [string, Special][] = [
+          ['::1', 'loopback'],
+          ['10.10.10.10', 'private'],
+          ['192.0.2.10', 'documentation'],
+          ['64:ff9b::1', 'reserved'],
+        ]
+
+        for (const [input, expected] of cases)
+          assert.equal(Address.from(input).range, expected, `Address(${input}).range → ${expected}`)
+      })
     })
 
     describe('static', () => {

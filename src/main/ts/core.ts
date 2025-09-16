@@ -14,19 +14,6 @@ const HEXX_RE = /^0x[0-9a-f]+$/
 const DEC_RE = /^(?:0|[1-9][0-9]*)$/
 const OCT_RE = /^0[0-7]+$/
 
-const isDec = (str: string): boolean => {
-  if (str === '0') return true
-  if (!str || str[0] === '0') return false
-  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); if (c < 48 || c > 57) return false }
-  return true
-}
-
-function isIPv4Candidate(str: string): boolean {
-  let dots = 0
-  for (let i = 0; i < str.length; i++) { if (str[i] === '.' && ++dots > 3) return false }
-  return dots === 3
-}
-
 // https://en.wikipedia.org/wiki/Reserved_IP_addresses
 export type Special = 'loopback' | 'private' | 'linklocal' | 'multicast' | 'documentation' | 'reserved' | 'unspecified'
 const SPECIALS: Record<Special, string[]> = {
@@ -75,6 +62,19 @@ const SPECIALS: Record<Special, string[]> = {
     '3fff::/20',      // IPv6 reserved
     '5f00::/16',      // IPv6 reserved
   ],
+}
+
+const isDec = (str: string): boolean => {
+  if (str === '0') return true
+  if (!str || str[0] === '0') return false
+  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); if (c < 48 || c > 57) return false }
+  return true
+}
+
+const isIPv4Candidate = (str: string): boolean => {
+  let dots = 0
+  for (let i = 0; i < str.length; i++) { if (str[i] === '.' && ++dots > 3) return false }
+  return dots === 3
 }
 
 // -------------------------------------------------------
