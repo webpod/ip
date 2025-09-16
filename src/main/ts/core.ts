@@ -155,6 +155,13 @@ export class Address {
     return Number(this.big)
   }
 
+  get range(): Special | undefined {
+    for (const matcher of SPECIAL_MATCHERS) {
+      const res = matcher(this)
+      if (res) return res
+    }
+  }
+
   private static create(big: bigint, family: Family, raw: Raw): Address {
     const o = Object.create(this.prototype)
     o.big = big; o.family = family; o.raw = raw
@@ -479,14 +486,12 @@ const ipv6fySubnet = (c: string) => {
   return [c, `${prefix}/${96 + Number(len)}`]
 }
 
-const SPECIAL_MATCHERS: ((addr: Raw) => Special | undefined)[] = []
+const SPECIAL_MATCHERS: ((addr: Address) => Special | undefined)[] = []
 for (const [cat, cidrs] of Object.entries(SPECIALS)) {
   for (const cidr of cidrs) {
     for (const x of ipv6fySubnet(cidr)) {
       const subnet = Address.cidrSubnet(x)
-      SPECIAL_MATCHERS.push((addr: Raw) =>
-        subnet.contains(addr) ? (cat as Special) : undefined
-      )
+      SPECIAL_MATCHERS.push((addr: Address) => addr.family === subnet.family && subnet.contains(addr) ? (cat as Special) : undefined)
     }
   }
 }

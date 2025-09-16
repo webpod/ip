@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import {test, describe} from 'vitest'
-import {Address, Special} from '../../main/ts/core.ts'
+import {Address, type Special} from '../../main/ts/core.ts'
 
 describe('extra', () => {
   describe('class Address', () => {
@@ -165,6 +165,7 @@ describe('extra', () => {
           ['100.64.0.1', true, 'private'],
           ['fc00::abcd', true, 'private'],
           ['198.18.0.42', true, 'private'],
+          ['::ffff:192.0.2.1', false, 'private'],
           ['10.0.0.1', false, 'loopback'],
 
           ['169.254.1.1', true, 'linklocal'],
@@ -177,6 +178,7 @@ describe('extra', () => {
           ['224.0.0.1', false, 'reserved'],
 
           ['192.0.2.1', true, 'documentation'],
+          ['::ffff:192.0.2.1', true, 'documentation'],
           ['198.51.100.42', true, 'documentation'],
           ['203.0.113.5', true, 'documentation'],
           ['2001:db8::1', true, 'documentation'],
@@ -184,7 +186,6 @@ describe('extra', () => {
 
           ['240.0.0.1', true, 'reserved'],
           ['255.255.255.255', true, 'reserved'],
-          ['::ffff:192.0.2.1', true, 'reserved'],
           ['64:ff9b::1', true, 'reserved'],
           ['64:ff9b:1::abcd', true, 'reserved'],
           ['100::1', true, 'reserved'],
@@ -193,6 +194,7 @@ describe('extra', () => {
           ['2002::1', true, 'reserved'],
           ['3fff::1', true, 'reserved'],
           ['5f00::1', true, 'reserved'],
+          ['::ffff:192.0.2.1', false, 'reserved'],
           ['0.0.0.1', false, 'private'],
         ]
 

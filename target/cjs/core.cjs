@@ -218,6 +218,12 @@ var _Address = class _Address {
     if (this.big > IPV4_MAX) throw new Error(`Address is wider than IPv4: ${this}`);
     return Number(this.big);
   }
+  get range() {
+    for (const matcher of SPECIAL_MATCHERS) {
+      const res = matcher(this);
+      if (res) return res;
+    }
+  }
   static create(big, family, raw) {
     const o = Object.create(this.prototype);
     o.big = big;
@@ -475,9 +481,7 @@ for (const [cat, cidrs] of Object.entries(SPECIALS)) {
   for (const cidr2 of cidrs) {
     for (const x of ipv6fySubnet(cidr2)) {
       const subnet2 = Address.cidrSubnet(x);
-      SPECIAL_MATCHERS.push(
-        (addr) => subnet2.contains(addr) ? cat : void 0
-      );
+      SPECIAL_MATCHERS.push((addr) => addr.family === subnet2.family && subnet2.contains(addr) ? cat : void 0);
     }
   }
 }
