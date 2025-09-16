@@ -1,3 +1,8 @@
+## [0.4.0](https://github.com/webpod/ip/compare/v0.3.0...v0.4.0) (2025-09-16)
+
+### Features
+* feat: introduce `isIP()`, `isIPv4()` and `isIPv6()` shortcuts. (#21) ([5155e0a](https://github.com/webpod/ip/commit/5155e0a69d70b46f064ae6f0738eff54a5e42264))
+
 ## [0.3.0](https://github.com/webpod/ip/compare/v0.2.7...v0.3.0) (2025-09-16)
 
 ### Features
