@@ -70,5 +70,6 @@ export declare const isV4Format: (addr: string) => boolean;
 export declare const isV6Format: (addr: string) => boolean;
 export declare const isIPv4: (addr: string) => boolean;
 export declare const isIPv6: (addr: string) => boolean;
+export declare const isIP: (addr: string) => boolean;
 export declare function isLoopback(addr: Raw): boolean;
 export declare function loopback(family?: string | number): string;

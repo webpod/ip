@@ -565,6 +565,7 @@ export const isV6Format = (addr: string): boolean => {
 
 export const isIPv4 = isV4Format
 export const isIPv6 = isV6Format
+export const isIP = (addr: string): boolean => isV4Format(addr) || isV6Format(addr)
 
 export function isLoopback(addr: Raw): boolean {
   return Address.isSpecial(addr, ['loopback', 'unspecified', 'linklocal'])
