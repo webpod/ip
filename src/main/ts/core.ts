@@ -549,11 +549,11 @@ export function fromLong(n: number | bigint | `${bigint}`): string {
   return Address.from(n).toString()
 }
 
-export const isV4Format = (addr: string)=> {
+export const isV4Format = (addr: string): boolean=> {
   return isIPv4Candidate(addr) && Address.normalizeToLong(addr, true) !== -1
 }
 
-export const isV6Format = (addr: string) => {
+export const isV6Format = (addr: string): boolean => {
   if (!`${addr}`.includes(':')) return false
 
   try {
@@ -562,6 +562,9 @@ export const isV6Format = (addr: string) => {
     return false
   }
 }
+
+export const isIPv4 = isV4Format
+export const isIPv6 = isV6Format
 
 export function isLoopback(addr: Raw): boolean {
   return Address.isSpecial(addr, ['loopback', 'unspecified', 'linklocal'])
