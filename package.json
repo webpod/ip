@@ -23,7 +23,8 @@
   "files": [
     "target/cjs",
     "target/esm",
-    "target/dts"
+    "target/dts",
+    "lib"
   ],
   "scripts": {
     "build": "concurrently 'npm:build:*'",
