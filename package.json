@@ -16,6 +16,10 @@
       "require": "./target/cjs/core.cjs",
       "import": "./target/esm/core.mjs",
       "default": "./target/esm/core.mjs"
+    },
+    "./lib/ip.js": {
+      "types": "./target/dts/index.d.ts",
+      "require": "./target/cjs/index.cjs"
     }
   },
   "module": "target/esm/index.mjs",
