@@ -1,3 +1,8 @@
+## [0.4.2](https://github.com/webpod/ip/compare/v0.4.1...v0.4.2) (2025-09-17)
+
+### Fixes & improvements
+* perf: check addr length before `normalizeToLong()` ([8a8c366](https://github.com/webpod/ip/commit/8a8c36657409dcebea76f712e3a0c2f0ef371d30))
+
 ## [0.4.1](https://github.com/webpod/ip/compare/v0.4.0...v0.4.1) (2025-09-16)
 
 ### Fixes & improvements
