@@ -122,6 +122,7 @@ var SPECIALS = {
     // IPv6 reserved
   ]
 };
+var PRIVATES = ["private", "linklocal", "loopback", "unspecified"];
 var _Address = class _Address {
   constructor() {
     __publicField(this, "raw");
@@ -395,7 +396,7 @@ var _Address = class _Address {
     return false;
   }
   static isPrivate(addr) {
-    return this.isSpecial(addr, ["private", "linklocal", "loopback", "unspecified"]);
+    return this.isSpecial(addr, PRIVATES);
   }
   static isPublic(addr) {
     return !this.isPrivate(addr);

@@ -63,6 +63,7 @@ const SPECIALS: Record<Special, string[]> = {
     '5f00::/16',      // IPv6 reserved
   ],
 }
+const PRIVATES: Special[] = ['private', 'linklocal', 'loopback', 'unspecified']
 
 // -------------------------------------------------------
 // Class to parse and handle IP addresses
@@ -457,7 +458,7 @@ export class Address {
   }
 
   static isPrivate(addr: Raw): boolean {
-    return this.isSpecial(addr, ['private', 'linklocal', 'loopback', 'unspecified'])
+    return this.isSpecial(addr, PRIVATES)
   }
 
   static isPublic(addr: Raw): boolean {

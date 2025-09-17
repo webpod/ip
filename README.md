@@ -6,8 +6,9 @@ This lib is an alternative for the [`ip`](https://www.npmjs.com/package/ip) pack
 * Reforged in TypeScript
 * Provides both ESM and CJS entries
 * Exposes browser-compatible `./core`
-* Eliminates annoying vulnerability [CVE-2024-29415](https://github.com/advisories/GHSA-2p57-rm9w-gvfp)
-* Brings various fixes and improvements
+* Eliminates annoying vulnerabilities [CVE-2024-29415](https://github.com/advisories/GHSA-2p57-rm9w-gvfp), [CVE-2023-42282](https://github.com/advisories/GHSA-78xj-cgh5-2h22)
+* Brings various fixes, improvements and optimizations
+* [Enterprise ready](https://dev.to/antongolub/cve-2024-29415-problem-solution-3o3f)
 
 ## Install
 ```shell
@@ -118,6 +119,7 @@ addr6.family        // 6
 addr6.big           // 1n
 addr6.toString()    // '::1'
 addr6.toString(4)   // '0.0.0.1'
+addr6.toBuffer().toString('hex') // '00000000000000000000000000000001'
 
 // -------------------------------------------------------
 // Specific ranges check

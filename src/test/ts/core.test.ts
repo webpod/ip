@@ -24,6 +24,11 @@ describe('extra', () => {
             assert.deepEqual(arr, [...expected])
           })
         }
+
+        test('toBuffer().toString("hex")', () => {
+          assert.equal(Address.from('::1').toBuffer().toString('hex'), '00000000000000000000000000000001')
+          assert.equal(Address.from('0.0.0.1').toBuffer().toString('hex'), '00000001')
+        })
       })
 
       describe('toString()', () => {
