@@ -93,6 +93,7 @@ ${vars.join('\n')}
 const formats = format.split(',')
 
 const esmConfig = {
+  logLevel: 'error',
   absWorkingDir: cwd,
   entryPoints,
   outdir: './target/esm',

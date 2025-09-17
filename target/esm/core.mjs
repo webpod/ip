@@ -42,10 +42,9 @@ var IPV4_LB = "127.0.0.1";
 var IPV6_LB = "fe80::1";
 var IPV6_MAX = (/* @__PURE__ */ BigInt("1") << /* @__PURE__ */ BigInt("128")) - /* @__PURE__ */ BigInt("1");
 var IPV4_MAX = /* @__PURE__ */ BigInt("0xffffffff");
+var OCT_RE = /^0[0-7]+$/;
 var HEX_RE = /^[0-9a-fA-F]+$/;
 var HEXX_RE = /^0x[0-9a-f]+$/;
-var DEC_RE = /^(?:0|[1-9][0-9]*)$/;
-var OCT_RE = /^0[0-7]+$/;
 var SPECIALS = {
   unspecified: [
     "0.0.0.0/8",
@@ -300,18 +299,18 @@ var _Address = class _Address {
     return _Address.fromNumber(big, family);
   }
   static fromString(addr) {
-    if (!addr || addr.length > IPV6_LEN_LIM) throw new Error(`Invalid address: ${addr}`);
+    if (!addr) throw new Error(`Invalid address: empty`);
     if (addr === "::") return this.create(/* @__PURE__ */ BigInt("0"), 6, addr);
     if (addr === "0") return this.create(/* @__PURE__ */ BigInt("0"), 4, addr);
     return addr.includes(":") ? this.fromIPv6(addr) : this.fromIPv4(addr);
   }
   static fromIPv6(addr) {
-    const groups = [];
     const al = addr.length;
-    let p = 0, gc = -1;
     const sep = addr.indexOf("::");
-    if (sep !== -1 && addr.indexOf("::", sep + 1) !== -1)
+    if (al > IPV6_LEN_LIM || sep !== -1 && addr.indexOf("::", sep + 1) !== -1)
       throw new Error(`Invalid address: ${addr}`);
+    const groups = [];
+    let p = 0, gc = -1;
     while (true) {
       const i = addr.indexOf(":", p);
       const last = i === -1;
@@ -333,17 +332,19 @@ var _Address = class _Address {
       if (last) break;
       p = i + 1;
     }
-    if (gc === -1 ? groups.length !== 8 : groups.length > 7) throw new Error(`Invalid address: ${addr}`);
+    const offset = 8 - groups.length;
+    if (gc === -1 ? offset !== 0 : offset < 1) throw new Error(`Invalid address: ${addr}`);
     let big = /* @__PURE__ */ BigInt("0");
     for (let i = 0; i < 8; i++) {
-      const part = i < gc ? groups[i] : i < gc + (8 - groups.length) ? 0 : groups[i - (8 - groups.length)];
+      const idx = i < gc ? i : i < gc + offset ? -1 : i - offset;
+      const part = idx === -1 ? 0 : groups[idx];
       big = (big << /* @__PURE__ */ BigInt("16")) + BigInt(part);
     }
     return this.create(big, 6, addr);
   }
   static fromIPv4(addr) {
     if (addr.includes(".")) return this.fromLong(this.normalizeToLong(addr, isIPv4Candidate(addr)));
-    if (DEC_RE.test(addr)) return this.fromNumber(addr);
+    if (isDec(addr)) return this.fromNumber(addr);
     throw new Error(`Invalid address: ${addr}`);
   }
   static normalizeFamily(family) {
@@ -353,6 +354,7 @@ var _Address = class _Address {
     throw new Error(`Invalid family: ${family}`);
   }
   static normalizeToLong(addr, strict = false) {
+    if (addr.length > IPV4_LEN_LIM + 4) throw new Error(`Invalid address: ${addr}`);
     const groups = [];
     let p = 0;
     while (true) {
@@ -403,7 +405,7 @@ var _Address = class _Address {
   }
 };
 __publicField(_Address, "fromPrefixLen", (prefixlen, family) => {
-  if (typeof prefixlen === "string" && !DEC_RE.test(prefixlen)) throw new Error(`Invalid prefix: ${prefixlen}`);
+  if (typeof prefixlen === "string" && !isDec(prefixlen)) throw new Error(`Invalid prefix: ${prefixlen}`);
   const len = +prefixlen | 0;
   const fam = _Address.normalizeFamily(family || (len > 32 ? 6 : 4));
   const bits = fam === 6 ? 128 : 32;

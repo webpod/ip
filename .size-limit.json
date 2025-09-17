@@ -7,7 +7,7 @@
       "README.md",
       "LICENSE"
     ],
-    "limit": "55.90 kB",
+    "limit": "56.00 kB",
     "brotli": false,
     "gzip": false
   },
@@ -27,7 +27,7 @@
     "path": [
       "target/cjs"
     ],
-    "limit": "23.90 kB",
+    "limit": "23.95 kB",
     "brotli": false,
     "gzip": false
   },
@@ -36,7 +36,7 @@
     "path": [
       "target/esm"
     ],
-    "limit": "20.0 kB",
+    "limit": "20.06 kB",
     "brotli": false,
     "gzip": false
   },

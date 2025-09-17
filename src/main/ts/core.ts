@@ -9,10 +9,9 @@ const IPV6_LB = 'fe80::1'
 const IPV6_MAX = (1n << 128n) - 1n
 const IPV4_MAX = 0xffffffffn
 
+const OCT_RE = /^0[0-7]+$/
 const HEX_RE = /^[0-9a-fA-F]+$/
 const HEXX_RE = /^0x[0-9a-f]+$/
-const DEC_RE = /^(?:0|[1-9][0-9]*)$/
-const OCT_RE = /^0[0-7]+$/
 
 // https://en.wikipedia.org/wiki/Reserved_IP_addresses
 export type Special = 'loopback' | 'private' | 'linklocal' | 'multicast' | 'documentation' | 'reserved' | 'unspecified'
@@ -283,7 +282,7 @@ export class Address {
   }
 
   static fromPrefixLen = (prefixlen: number | `${number}` | string, family?: string | number): Address => {
-    if (typeof prefixlen === 'string' && !DEC_RE.test(prefixlen)) throw new Error(`Invalid prefix: ${prefixlen}`)
+    if (typeof prefixlen === 'string' && !isDec(prefixlen)) throw new Error(`Invalid prefix: ${prefixlen}`)
 
     const len = +prefixlen | 0
     const fam = this.normalizeFamily(family || (len > 32 ? 6 : 4))
@@ -328,7 +327,7 @@ export class Address {
   }
 
   private static fromString(addr: string): Address {
-    if (!addr || (addr.length > IPV6_LEN_LIM)) throw new Error(`Invalid address: ${addr}`)
+    if (!addr) throw new Error(`Invalid address: empty`)
     if (addr === '::' ) return this.create(0n, 6, addr)
     if (addr === '0') return this.create(0n, 4, addr)
 
@@ -338,14 +337,16 @@ export class Address {
   }
 
   private static fromIPv6(addr: string): Address {
-    const groups: number[] = []
     const al = addr.length
-    let p = 0, gc = -1
-
-    // only one '::' allowed
     const sep = addr.indexOf('::')
-    if (sep !== -1 && addr.indexOf('::', sep + 1) !== -1)
+    if (
+      al > IPV6_LEN_LIM ||
+      sep !== -1 && addr.indexOf('::', sep + 1) !== -1 // only one '::' allowed
+    )
       throw new Error(`Invalid address: ${addr}`)
+
+    const groups: number[] = []
+    let p = 0, gc = -1
 
     while (true) {
       const i = addr.indexOf(':', p)
@@ -378,11 +379,13 @@ export class Address {
       if (last) break
       p = i + 1
     }
-    if (gc === -1 ? groups.length !== 8 : groups.length > 7) throw new Error(`Invalid address: ${addr}`)
+    const offset = 8 - groups.length
+    if (gc === -1 ? offset !== 0 : offset < 1) throw new Error(`Invalid address: ${addr}`)
 
     let big = 0n
     for (let i = 0; i < 8; i++) {
-      const part = i < gc ? groups[i] : i < gc + (8 - groups.length) ? 0 : groups[i - (8 - groups.length)]
+      const idx = i < gc ? i : i < gc + offset ? -1 : i - offset
+      const part = idx === -1 ? 0 : groups[idx]
       big = (big << 16n) + BigInt(part)
     }
     return this.create(big, 6, addr)
@@ -390,7 +393,7 @@ export class Address {
 
   private static fromIPv4(addr: string): Address {
     if (addr.includes('.')) return this.fromLong(this.normalizeToLong(addr, isIPv4Candidate(addr)))
-    if (DEC_RE.test(addr)) return this.fromNumber(addr as `${bigint}`)
+    if (isDec(addr)) return this.fromNumber(addr as `${bigint}`)
     throw new Error(`Invalid address: ${addr}`)
   }
 
@@ -414,6 +417,7 @@ export class Address {
   }
 
   static normalizeToLong(addr: string, strict = false): number {
+    if (addr.length > IPV4_LEN_LIM + 4) throw new Error(`Invalid address: ${addr}`)
     const groups: number[] = []
     let p = 0
 
