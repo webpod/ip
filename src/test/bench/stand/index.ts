@@ -4,6 +4,7 @@ import ip from 'ip'
 import * as isip from 'is-ip'
 import ipaddrjs from 'ipaddr.js'
 import * as ipa from 'ip-address'
+import * as ip2buf from 'ip2buf'
 
 export type Checker = (addr: string) => boolean | null
 
@@ -57,6 +58,15 @@ export const tools: Record<string, Record<string, Checker | string>> = {
     },
     isIPv6: (addr) => {
       return ipa.Address6.isValid(addr)
+    },
+  },
+  'ip2buf': {
+    ref: 'https://github.com/reklatsmasters/ip2buf',
+    isIPv4: (addr) => {
+      try { return !!ip2buf.pton4(addr) } catch { return false }
+    },
+    isIPv6: (addr) => {
+      try { return !!ip2buf.pton6(addr) } catch { return false }
     },
   },
 }
