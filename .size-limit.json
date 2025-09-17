@@ -2,24 +2,28 @@
   {
     "name": "@webpod/ip",
     "path": [
-      "target",
-      "!target/coverage",
+      "target/dts",
+      "target/cjs",
+      "target/esm",
       "README.md",
-      "LICENSE"
+      "LICENSE",
+      "package-main.json"
     ],
-    "limit": "56.00 kB",
+    "limit": "57.10 kB",
     "brotli": false,
     "gzip": false
   },
   {
     "name": "zipped",
     "path": [
-      "target",
-      "!target/coverage",
+      "target/dts",
+      "target/cjs",
+      "target/esm",
       "README.md",
-      "LICENSE"
+      "LICENSE",
+      "package-main.json"
     ],
-    "limit": "16.90 kB",
+    "limit": "17.35 kB",
     "gzip": true
   },
   {

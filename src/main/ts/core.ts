@@ -526,7 +526,7 @@ type Checker = (addr: string) => boolean
 
 export function subnet(addr: Raw, smask: Raw): LegacySubnet {
   const sub = Address.subnet(addr, smask)
-  return sub.family === 6 ? sub : {...sub, numHosts: Number(sub.numHosts), length:   Number(sub.length)}
+  return sub.family === 6 ? sub : {...sub, numHosts: Number(sub.numHosts), length: Number(sub.length)}
 }
 export function cidrSubnet(cidrString: string): LegacySubnet {
   const sub = Address.cidrSubnet(cidrString)
