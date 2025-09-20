@@ -1,3 +1,8 @@
+## [0.4.3](https://github.com/webpod/ip/compare/v0.4.2...v0.4.3) (2025-09-20)
+
+### Fixes & improvements
+* docs: mention alternatives (#23) ([d080f35](https://github.com/webpod/ip/commit/d080f354bac20324fce56cf9522b2c5796acd8ed))
+
 ## [0.4.2](https://github.com/webpod/ip/compare/v0.4.1...v0.4.2) (2025-09-17)
 
 ### Fixes & improvements

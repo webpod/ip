@@ -1,6 +1,6 @@
 {
   "name": "@webpod/ip",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Lite IP tools",
   "type": "module",
   "main": "target/cjs/index.cjs",
@@ -22,7 +22,6 @@
       "require": "./target/cjs/index.cjs"
     }
   },
-  "module": "target/esm/index.mjs",
   "types": "target/dts/index.d.ts",
   "files": [
     "target/cjs",
@@ -30,51 +29,6 @@
     "target/dts",
     "lib"
   ],
-  "scripts": {
-    "build": "concurrently 'npm:build:*'",
-    "build:js": "node ./src/scripts/build.mjs --entry='src/main/ts/core.ts:src/main/ts/index.ts'",
-    "build:dts": "tsc --emitDeclarationOnly --outDir target/dts",
-    "build:tests": "node ./src/scripts/build-tests.mjs",
-    "build:docs": "typedoc --options src/main/typedoc",
-    "build:stamp": "npx buildstamp",
-    "build:jsr": "node ./src/scripts/build-jsr.mjs",
-    "build:pkgjson": "node ./src/scripts/build-pkgjson.ts",
-    "test": "concurrently 'npm:test:*'",
-    "test:target": "git diff --exit-code --quiet || (echo 'Uncommitted changes' && exit 1)",
-    "test:size": "size-limit",
-    "_test:lint": "eslint -c src/test/lint/.eslintrc.json src",
-    "test:unit": "vitest run --coverage --config ./vitest.config.js",
-    "test:jsr": "jsr publish --dry-run",
-    "test:audit": "npm audit",
-    "_test:workflow": "zizmor .github/workflows -v -p --min-severity=medium",
-    "smoke:esm": "node ./src/test/smoke/node.test.mjs",
-    "smoke:cjs": "node src/test/smoke/node.test.cjs",
-    "smoke:browser": "npx vitest run --config src/test/smoke/vitest.browser.config.js",
-    "smoke:deno": "deno test ./src/test/smoke/deno.test.js --allow-read --allow-sys --allow-env --allow-run",
-    "_publish:draft": "npm run build && npm publish --no-git-tag-version",
-    "_postrelease": "node src/scripts/build-jsr.mjs && jsr publish --allow-dirty"
-  },
-  "devDependencies": {
-    "@size-limit/file": "^11.2.0",
-    "@types/node": "^24.5.2",
-    "@vitest/browser": "^3.2.4",
-    "@vitest/coverage-v8": "^3.2.4",
-    "concurrently": "^9.2.1",
-    "esbuild": "^0.25.10",
-    "esbuild-node-externals": "^1.18.0",
-    "esbuild-plugin-entry-chunks": "^0.1.17",
-    "esbuild-plugin-extract-helpers": "^0.0.6",
-    "esbuild-plugin-transform-hook": "^0.2.0",
-    "esbuild-plugin-utils": "^0.1.0",
-    "fast-glob": "^3.3.3",
-    "jsr": "^0.13.5",
-    "minimist": "^1.2.8",
-    "playwright": "^1.55.0",
-    "size-limit": "^11.2.0",
-    "typedoc": "^0.28.13",
-    "typescript": "^5.9.2",
-    "vitest": "^3.2.4"
-  },
   "keywords": [
     "ip",
     "ip-address",
@@ -84,9 +38,6 @@
     "ipv6"
   ],
   "homepage": "https://github.com/webpod/ip#readme",
-  "bugs": {
-    "url": "https://github.com/webpod/ip/issues"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/webpod/ip.git"
