@@ -112,6 +112,9 @@ const suites: {title: string, method: string, cases: [string, boolean, string][]
       ['127.1', true, 'CVE-2024-29415: short loopback'],
       ['2130706433', true, 'CVE-2024-29415: integer loopback'],
       ['::fFFf:127.0.0.1', true, 'CVE-2024-29415: IPv6-mapped loopback'],
+      ['::0:ffff:127.0.0.1', true, '↑'],
+      ['0::0:ffff:127.0.0.1', true, '↑'],
+      ['0:0:0:0:0:ffff:127.0.0.1', true, '↑'],
 
       // Invalid / malformed
       ['01200034567', false, 'invalid: octal-style'],
