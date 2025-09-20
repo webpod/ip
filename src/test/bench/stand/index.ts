@@ -5,6 +5,7 @@ import * as isip from 'is-ip'
 import ipaddrjs from 'ipaddr.js'
 import * as ipa from 'ip-address'
 import * as ip2buf from 'ip2buf'
+import * as neoip from 'neoip'
 
 export type Checker = (addr: string) => boolean | null
 
@@ -68,5 +69,11 @@ export const tools: Record<string, Record<string, Checker | string>> = {
     isIPv6: (addr) => {
       try { return !!ip2buf.pton6(addr) } catch { return false }
     },
+  },
+  neoip: {
+    ref: 'https://github.com/Zaptic/neoip',
+    isIPv4: (addr) => neoip.isV4Format(addr),
+    isIPv6: (addr) => neoip.isV6Format(addr),
+    isPrivate: (addr) => neoip.isPrivate(addr),
   },
 }
