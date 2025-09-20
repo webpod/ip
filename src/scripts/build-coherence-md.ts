@@ -131,7 +131,7 @@ let output = `# Coherence across libraries
 
 for (const {title, method, cases} of suites) {
   const apis = Object.entries(tools).filter(([_, methods]) => method in methods)
-  const thead = ['Address', ...apis.map(([name, {ref}]) => `[\`${name}\`](${ref})`), 'Comment']
+  const thead = ['Address', ...apis.map(([name, {ref}]) => ref ? `[\`${name}\`](${ref})`: name), 'Comment']
   output += `## ${title}
 ${thead.join(' | ')}
 ${thead.map(() => '---').join(' | ')}
