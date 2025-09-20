@@ -134,5 +134,8 @@ Address.isSpecial('127.0.0.1', 'documentation')   // false
 Address.isSpecial('1.2.3.4')                      // false
 ```
 
+## Alternatives
+Follow [coherence.md](./COHERENCE.md) to explore suitable options.
+
 ## License
 MIT
