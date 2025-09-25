@@ -85,3 +85,4 @@ Address | [`ip`](https://github.com/indutny/node-ip) | [`@webpod/ip`](https://gi
 `012.1.2.3` | ✓ | n/a | ❌ | ❌ | invalid: octal-style IPv4
 `000:0:0000::01` | ❌ | ✓ | ✓ | ✓ | valid: zero-compression
 `::fFFf:127.255.255.256` | ✓ | n/a | n/a | ✓ | invalid: IPv4 overflow
+`017700000001` | ✓ | n/a | ❌ | ❌ | octal 127.0.0.1
