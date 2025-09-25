@@ -1,3 +1,8 @@
+## [0.4.4](https://github.com/webpod/ip/compare/v0.4.3...v0.4.4) (2025-09-25)
+
+### Fixes & improvements
+* fix(pkg): keep `module` field on publish (#24) ([b7268d5](https://github.com/webpod/ip/commit/b7268d5c960d13a002f4c20654c77d77e15e8c35))
+
 ## [0.4.3](https://github.com/webpod/ip/compare/v0.4.2...v0.4.3) (2025-09-20)
 
 ### Fixes & improvements
