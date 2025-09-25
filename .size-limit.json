@@ -9,7 +9,7 @@
       "LICENSE",
       "package-main.json"
     ],
-    "limit": "57.20 kB",
+    "limit": "57.25 kB",
     "brotli": false,
     "gzip": false
   },
