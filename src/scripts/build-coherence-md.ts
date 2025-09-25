@@ -117,6 +117,7 @@ const suites: {title: string, method: string, cases: [string, boolean, string][]
       ['0:0:0:0:0:ffff:127.0.0.1', true, '↑'],
 
       // Invalid / malformed
+      ['017700000001', false, 'octal 127.0.0.1'], // https://github.com/indutny/node-ip/issues/162
       ['01200034567', false, 'invalid: octal-style'],
       ['012.1.2.3', false, 'invalid: octal-style IPv4'],
       ['000:0:0000::01', true, 'valid: zero-compression'],
