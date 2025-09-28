@@ -599,9 +599,9 @@ describe('extra', () => {
 
   describe('shortcuts', () => {
     test('isIP(), isIPv4(), isIPv6()', () => {
-      assert.equal(isIP('foo'), false)
-      assert.equal(isIP('127.0.0.1'), true)
-      assert.equal(isIP('::1234:ffff'), true)
+      assert.equal(isIP('foo'), 0)
+      assert.equal(isIP('127.0.0.1'), 4)
+      assert.equal(isIP('::1234:ffff'), 6)
       assert.equal(isIPv4('127.0.0.1'), true)
       assert.equal(isIPv6('::1234:ffff'), true)
     })

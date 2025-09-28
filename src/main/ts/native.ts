@@ -1,6 +1,14 @@
 import os from 'node:os'
 import { isLoopback, isPrivate, isPublic, loopback, Address } from './core.ts'
 
+export {
+  isIP,
+  isIPv6,
+  isIPv4,
+  isIPv4 as isV4Format,
+  isIPv6 as isV6Format,
+} from 'node:net'
+
 const PUBLIC = 'public'
 const PRIVATE = 'private'
 

@@ -1,7 +1,15 @@
+import * as native from './native.ts';
 import * as core from './core.ts';
-export * from './address.ts';
-export * from './core.ts';
+export * from './native.ts';
+export { type Special, type BufferLike, Address, isPrivate, isPublic, isEqual, isLoopback, loopback, toLong, toBuffer, toString, fromLong, fromPrefixLen, cidr, cidrSubnet, subnet, mask, not, or, normalizeToLong, } from './core.ts';
 export declare const ip: {
+    isIP: typeof native.isIP;
+    isIPv6: typeof native.isIPv6;
+    isIPv4: typeof native.isIPv4;
+    isV4Format: typeof native.isIPv4;
+    isV6Format: typeof native.isIPv6;
+    addresses: (name?: string, family?: string | number) => string[];
+    address: (name?: string, family?: string) => string | undefined;
     fromPrefixLen(prefixlen: number, family?: string | number): string;
     subnet(addr: string | number | bigint | number[] | core.BufferLike | core.Address, smask: string | number | bigint | number[] | core.BufferLike | core.Address): Omit<{
         family: 4 | 6;
@@ -48,12 +56,5 @@ export declare const ip: {
     or: (typeof core.Address)["or"];
     cidr: (typeof core.Address)["cidr"];
     normalizeToLong: (typeof core.Address)["normalizeToLong"];
-    isV4Format: (addr: string) => boolean;
-    isV6Format: (addr: string) => boolean;
-    isIPv4: (addr: string) => boolean;
-    isIPv6: (addr: string) => boolean;
-    isIP: (addr: string) => boolean;
-    addresses: (name?: string, family?: string | number) => string[];
-    address: (name?: string, family?: string) => string | undefined;
 };
 export default ip;

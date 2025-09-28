@@ -3,7 +3,7 @@ import assert from 'node:assert'
 import os from 'node:os'
 import net from 'node:net'
 import { isPrivate } from '../../main/ts/core.ts'
-import { address, addresses } from '../../main/ts/address.ts'
+import { address, addresses } from '../../main/ts/native.ts'
 
 describe('address()', () => {
   test('private', () => {
