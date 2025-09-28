@@ -1,3 +1,8 @@
+## [0.5.2](https://github.com/webpod/ip/compare/v0.5.1...v0.5.2) (2025-09-28)
+
+### Fixes & improvements
+* docs: add pkg metadata comparison (#28) ([9e71e18](https://github.com/webpod/ip/commit/9e71e186cd159c94868499ff7c4eaa11ca7d8c20))
+
 ## [0.5.1](https://github.com/webpod/ip/compare/v0.5.0...v0.5.1) (2025-09-28)
 
 ### Fixes & improvements
