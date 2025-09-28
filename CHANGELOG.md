@@ -1,3 +1,8 @@
+## [0.5.1](https://github.com/webpod/ip/compare/v0.5.0...v0.5.1) (2025-09-28)
+
+### Fixes & improvements
+* refactor: enhance `Family` type (#27) ([0ff2aca](https://github.com/webpod/ip/commit/0ff2acacd5db310f4c602d67ed323135ec28d5a8))
+
 ## [0.5.0](https://github.com/webpod/ip/compare/v0.4.4...v0.5.0) (2025-09-28)
 
 ### Features
