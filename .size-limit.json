@@ -9,7 +9,7 @@
       "LICENSE",
       "package-main.json"
     ],
-    "limit": "60.20 kB",
+    "limit": "60.31 kB",
     "brotli": false,
     "gzip": false
   },
@@ -18,7 +18,7 @@
     "path": [
       "target/*/core.*"
     ],
-    "limit": "41.15 kB",
+    "limit": "41.25 kB",
     "brotli": false,
     "gzip": false
   },
@@ -32,7 +32,7 @@
       "LICENSE",
       "package-main.json"
     ],
-    "limit": "18.25 kB",
+    "limit": "18.30 kB",
     "gzip": true
   },
   {
@@ -56,7 +56,7 @@
   {
     "name": "libdefs",
     "path": "target/dts",
-    "limit": "7.00 kB",
+    "limit": "7.15 kB",
     "brotli": false,
     "gzip": false
   }

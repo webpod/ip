@@ -2,6 +2,7 @@ import { type BufferLike } from './polyfill.ts';
 export type { BufferLike } from './polyfill.ts';
 export type Special = 'loopback' | 'private' | 'linklocal' | 'multicast' | 'documentation' | 'reserved' | 'unspecified';
 type Family = 4 | 6;
+export type FamilyAlias = Family | '4' | '6' | 'ipv4' | 'ipv6' | 'IPV4' | 'IPV6' | 'IpV4' | 'IpV6';
 type Raw = string | number | bigint | BufferLike | Array<number> | Address;
 type Subnet = {
     family: Family;
@@ -21,7 +22,7 @@ export declare class Address {
     big: bigint;
     toBuffer(buff?: BufferLike, offset?: number): BufferLike;
     toArray(): number[];
-    toString(family?: Family | string | number, mapped?: boolean): string;
+    toString(family?: FamilyAlias, mapped?: boolean): string;
     toLong(): number;
     get range(): Special | undefined;
     private static create;
@@ -33,7 +34,7 @@ export declare class Address {
     static not(addr: Raw): string;
     static or(addrA: Raw, addrB: Raw): string;
     static isEqual(addrA: Raw, addrB: Raw): boolean;
-    static fromPrefixLen: (prefixlen: number | `${number}` | string, family?: string | number) => Address;
+    static fromPrefixLen: (prefixlen: number | `${number}` | string, family?: FamilyAlias) => Address;
     private static fromNumber;
     private static fromLong;
     private static fromBuffer;
@@ -55,7 +56,7 @@ export declare const not: typeof Address['not'];
 export declare const or: typeof Address['or'];
 export declare const cidr: typeof Address['cidr'];
 export declare const normalizeToLong: typeof Address['normalizeToLong'];
-export declare function fromPrefixLen(prefixlen: number, family?: string | number): string;
+export declare function fromPrefixLen(prefixlen: number, family?: FamilyAlias): string;
 type LegacySubnet = Omit<Subnet, 'numHosts' | 'length'> & {
     numHosts: number | bigint;
     length: number | bigint;
@@ -73,4 +74,4 @@ export declare const isIPv4: Checker;
 export declare const isIPv6: Checker;
 export declare const isIP: (addr: string) => 0 | Family;
 export declare function isLoopback(addr: Raw): boolean;
-export declare function loopback(family?: string | number): string;
+export declare function loopback(family?: FamilyAlias): string;
