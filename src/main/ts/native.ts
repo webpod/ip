@@ -1,5 +1,5 @@
 import os from 'node:os'
-import { isLoopback, isPrivate, isPublic, loopback, Address } from './core.ts'
+import { isLoopback, isPrivate, isPublic, loopback, Address, type FamilyAlias } from './core.ts'
 
 export {
   isIP,
@@ -13,17 +13,17 @@ const PUBLIC = 'public'
 const PRIVATE = 'private'
 
 const {normalizeFamily} = Address
-export const addresses = (name?: string, family: string | number = 4): string[] => {
+export const addresses = (kind?: string, family: FamilyAlias = 4): string[] => {
   const fam = normalizeFamily(family)
   const interfaces = os.networkInterfaces()
   const check =
-    name === PUBLIC ? isPublic
-      : name === PRIVATE ? isPrivate
+    kind === PUBLIC ? isPublic
+      : kind === PRIVATE ? isPrivate
         : () => true
 
   // specific NIC requested
-  if (name && name !== PRIVATE && name !== PUBLIC) {
-    const nic = interfaces[name]
+  if (kind && kind !== PRIVATE && kind !== PUBLIC) {
+    const nic = interfaces[kind]
     if (!nic) return []
     const match = nic.find(details => normalizeFamily(details.family) === fam)
     return [match?.address!]
@@ -42,5 +42,5 @@ export const addresses = (name?: string, family: string | number = 4): string[] 
   return all.length ? all : [loopback(fam)]
 }
 
-export const address = (name?: string, family?: string): string | undefined =>
-  addresses(name, family)[0]
+export const address = (kind?: string, family?: FamilyAlias): string | undefined =>
+  addresses(kind, family)[0]

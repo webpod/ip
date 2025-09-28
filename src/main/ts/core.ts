@@ -70,6 +70,7 @@ const PRIVATES: Special[] = ['private', 'linklocal', 'loopback', 'unspecified']
 // -------------------------------------------------------
 
 type Family = 4 | 6
+export type FamilyAlias = Family | '4' | '6' | 'ipv4' | 'ipv6' | 'IPV4' | 'IPV6' | 'IpV4' | 'IpV6'
 type Raw = string | number | bigint | BufferLike | Array<number> | Address
 type Subnet = {
   family: Family
@@ -106,7 +107,7 @@ export class Address {
     return [...this.toBuffer()]
   }
 
-  toString(family: Family | string | number = this.family, mapped?: boolean): string {
+  toString(family: FamilyAlias = this.family, mapped?: boolean): string {
     const fam = Address.normalizeFamily(family)
     const _mapped = mapped ?? (fam === 6 && this.family !== fam)
     const { big } = this
@@ -282,7 +283,7 @@ export class Address {
     return v6.big === ((0xffffn << 32n) | v4.big)
   }
 
-  static fromPrefixLen = (prefixlen: number | `${number}` | string, family?: string | number): Address => {
+  static fromPrefixLen = (prefixlen: number | `${number}` | string, family?: FamilyAlias): Address => {
     if (typeof prefixlen === 'string' && !isDec(prefixlen)) throw new Error(`Invalid prefix: ${prefixlen}`)
 
     const len = +prefixlen | 0
@@ -515,7 +516,7 @@ export const or:              typeof Address['or'] = Address.or.bind(Address)
 export const cidr:            typeof Address['cidr'] = Address.cidr.bind(Address)
 export const normalizeToLong: typeof Address['normalizeToLong'] = Address.normalizeToLong.bind(Address)
 
-export function fromPrefixLen(prefixlen: number, family?: string | number): string {
+export function fromPrefixLen(prefixlen: number, family?: FamilyAlias): string {
   return Address.fromPrefixLen(prefixlen, family).toString()
 }
 
@@ -579,7 +580,7 @@ export function isLoopback(addr: Raw): boolean {
   return Address.isSpecial(addr, ['loopback', 'unspecified', 'linklocal'])
 }
 
-export function loopback(family: string | number = 4): string {
+export function loopback(family: FamilyAlias = 4): string {
   const fam = Address.normalizeFamily(family)
   return fam === 4 ? IPV4_LB : IPV6_LB
 }

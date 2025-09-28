@@ -27,12 +27,12 @@ import {
 var PUBLIC = "public";
 var PRIVATE = "private";
 var { normalizeFamily } = Address;
-var addresses = (name, family = 4) => {
+var addresses = (kind, family = 4) => {
   const fam = normalizeFamily(family);
   const interfaces = os.networkInterfaces();
-  const check = name === PUBLIC ? isPublic : name === PRIVATE ? isPrivate : () => true;
-  if (name && name !== PRIVATE && name !== PUBLIC) {
-    const nic = interfaces[name];
+  const check = kind === PUBLIC ? isPublic : kind === PRIVATE ? isPrivate : () => true;
+  if (kind && kind !== PRIVATE && kind !== PUBLIC) {
+    const nic = interfaces[kind];
     if (!nic) return [];
     const match = nic.find((details) => normalizeFamily(details.family) === fam);
     return [match == null ? void 0 : match.address];
@@ -47,7 +47,7 @@ var addresses = (name, family = 4) => {
   }, []);
   return all.length ? all : [loopback(fam)];
 };
-var address = (name, family) => addresses(name, family)[0];
+var address = (kind, family) => addresses(kind, family)[0];
 
 // src/main/ts/index.ts
 import * as core from "./core.mjs";

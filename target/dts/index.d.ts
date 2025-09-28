@@ -8,9 +8,9 @@ export declare const ip: {
     isIPv4: typeof native.isIPv4;
     isV4Format: typeof native.isIPv4;
     isV6Format: typeof native.isIPv6;
-    addresses: (name?: string, family?: string | number) => string[];
-    address: (name?: string, family?: string) => string | undefined;
-    fromPrefixLen(prefixlen: number, family?: string | number): string;
+    addresses: (kind?: string, family?: core.FamilyAlias) => string[];
+    address: (kind?: string, family?: core.FamilyAlias) => string | undefined;
+    fromPrefixLen(prefixlen: number, family?: core.FamilyAlias): string;
     subnet(addr: string | number | bigint | number[] | core.BufferLike | core.Address, smask: string | number | bigint | number[] | core.BufferLike | core.Address): Omit<{
         family: 4 | 6;
         networkAddress: string;
@@ -46,7 +46,7 @@ export declare const ip: {
     toLong(addr: string | number | bigint | number[] | core.BufferLike | core.Address): number;
     fromLong(n: number | bigint | `${bigint}`): string;
     isLoopback(addr: string | number | bigint | number[] | core.BufferLike | core.Address): boolean;
-    loopback(family?: string | number): string;
+    loopback(family?: core.FamilyAlias): string;
     Address: typeof core.Address;
     isPublic: (typeof core.Address)["isPublic"];
     isPrivate: (typeof core.Address)["isPrivate"];
