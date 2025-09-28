@@ -1,3 +1,8 @@
+## [0.5.0](https://github.com/webpod/ip/compare/v0.4.4...v0.5.0) (2025-09-28)
+
+### Features
+* feat: align `isIP()` with `node:net` API (#25) ([9e47404](https://github.com/webpod/ip/commit/9e474045911f53e5ce057e6e780cbc401d5b8a86))
+
 ## [0.4.4](https://github.com/webpod/ip/compare/v0.4.3...v0.4.4) (2025-09-25)
 
 ### Fixes & improvements

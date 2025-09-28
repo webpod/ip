@@ -1,6 +1,6 @@
 {
   "name": "@webpod/ip",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "description": "Lite IP tools",
   "type": "module",
   "main": "target/cjs/index.cjs",
