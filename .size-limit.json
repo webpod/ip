@@ -9,7 +9,7 @@
       "LICENSE",
       "package-main.json"
     ],
-    "limit": "60.00 kB",
+    "limit": "60.20 kB",
     "brotli": false,
     "gzip": false
   },
@@ -18,7 +18,7 @@
     "path": [
       "target/*/core.*"
     ],
-    "limit": "41 kB",
+    "limit": "41.15 kB",
     "brotli": false,
     "gzip": false
   },
@@ -32,7 +32,7 @@
       "LICENSE",
       "package-main.json"
     ],
-    "limit": "18.10 kB",
+    "limit": "18.25 kB",
     "gzip": true
   },
   {
@@ -40,7 +40,7 @@
     "path": [
       "target/cjs"
     ],
-    "limit": "25.30 kB",
+    "limit": "25.40 kB",
     "brotli": false,
     "gzip": false
   },
@@ -49,7 +49,7 @@
     "path": [
       "target/esm"
     ],
-    "limit": "20.95 kB",
+    "limit": "21.00 kB",
     "brotli": false,
     "gzip": false
   },

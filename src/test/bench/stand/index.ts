@@ -1,5 +1,6 @@
 import * as net from 'node:net'
-import webpodip from '@webpod/ip'
+import wpip from '@webpod/ip'
+import * as wpipcore from '@webpod/ip/core'
 import ip from 'ip'
 import * as isip from 'is-ip'
 import ipaddrjs from 'ipaddr.js'
@@ -22,10 +23,19 @@ export const tools: Record<string, Record<string, Checker | string>> = {
   },
   '@webpod/ip': {
     ref: 'https://github.com/webpod/ip',
-    isIPv4: (addr) => webpodip.isV4Format(addr),
-    isIPv6: (addr) => webpodip.isV6Format(addr),
+    isIPv4: (addr) => wpip.isV4Format(addr),
+    isIPv6: (addr) => wpip.isV6Format(addr),
     isPrivate: (addr) => {
-      try { return webpodip.isPrivate(addr)
+      try { return wpip.isPrivate(addr)
+      } catch { return null }
+    },
+  },
+  '@webpod/ip/core': {
+    ref: 'https://github.com/webpod/ip',
+    isIPv4: (addr) => wpipcore.isV4Format(addr),
+    isIPv6: (addr) => wpipcore.isV6Format(addr),
+    isPrivate: (addr) => {
+      try { return wpipcore.isPrivate(addr)
       } catch { return null }
     },
   },

@@ -109,6 +109,7 @@ describe('index', () => {
     assert.equal(typeof index.isV6Format, 'function', 'index.isV6Format')
     assert.equal(typeof index.loopback, 'function', 'index.loopback')
     assert.equal(typeof index.mask, 'function', 'index.mask')
+    assert.equal(typeof index.normalizeToLong, 'function', 'index.normalizeToLong')
     assert.equal(typeof index.not, 'function', 'index.not')
     assert.equal(typeof index.or, 'function', 'index.or')
     assert.equal(typeof index.subnet, 'function', 'index.subnet')

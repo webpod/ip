@@ -42,6 +42,7 @@ var IPV4_LB = "127.0.0.1";
 var IPV6_LB = "fe80::1";
 var IPV6_MAX = (/* @__PURE__ */ BigInt("1") << /* @__PURE__ */ BigInt("128")) - /* @__PURE__ */ BigInt("1");
 var IPV4_MAX = /* @__PURE__ */ BigInt("0xffffffff");
+var IPV4_RE = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
 var OCT_RE = /^0[0-7]+$/;
 var HEX_RE = /^[0-9a-fA-F]+$/;
 var HEXX_RE = /^0x[0-9a-f]+$/;
@@ -493,7 +494,7 @@ function fromLong(n) {
   return Address.from(n).toString();
 }
 var isV4Format = (addr) => {
-  return isIPv4Candidate(addr) && Address.normalizeToLong(addr, true) !== -1;
+  return addr.length <= IPV4_LEN_LIM && IPV4_RE.test(addr);
 };
 var isV6Format = (addr) => {
   if (!`${addr}`.includes(":")) return false;
