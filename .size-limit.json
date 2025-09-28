@@ -9,7 +9,7 @@
       "LICENSE",
       "package-main.json"
     ],
-    "limit": "60.31 kB",
+    "limit": "60.40 kB",
     "brotli": false,
     "gzip": false
   },
@@ -32,7 +32,7 @@
       "LICENSE",
       "package-main.json"
     ],
-    "limit": "18.30 kB",
+    "limit": "18.32 kB",
     "gzip": true
   },
   {

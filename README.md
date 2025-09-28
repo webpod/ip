@@ -135,7 +135,7 @@ Address.isSpecial('1.2.3.4')                      // false
 ```
 
 ## Alternatives
-Follow [coherence.md](./COHERENCE.md) and [benchmark.md](./BENCHMARK.md) to explore suitable options.
+Follow [coherence.md](./COHERENCE.md), [benchmark.md](./BENCHMARK.md) and [meta.md](./META.md) to explore suitable options.
 
 ## License
 MIT

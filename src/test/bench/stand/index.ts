@@ -15,12 +15,6 @@ export const tools: Record<string, Record<string, Checker | string>> = {
     isIPv4: (addr) => net.isIPv4(addr),
     isIPv6: (addr) => net.isIPv6(addr),
   },
-  ip: {
-    ref: 'https://github.com/indutny/node-ip',
-    isIPv4: (addr) => ip.isV4Format(addr),
-    isIPv6: (addr) => ip.isV6Format(addr),
-    isPrivate: (addr) => ip.isPrivate(addr),
-  },
   '@webpod/ip': {
     ref: 'https://github.com/webpod/ip',
     isIPv4: (addr) => wpip.isV4Format(addr),
@@ -39,7 +33,12 @@ export const tools: Record<string, Record<string, Checker | string>> = {
       } catch { return null }
     },
   },
-
+  ip: {
+    ref: 'https://github.com/indutny/node-ip',
+    isIPv4: (addr) => ip.isV4Format(addr),
+    isIPv6: (addr) => ip.isV6Format(addr),
+    isPrivate: (addr) => ip.isPrivate(addr),
+  },
   'is-ip': {
     ref: 'https://github.com/sindresorhus/is-ip',
     isIPv4: (addr) => isip.isIPv4(addr),
