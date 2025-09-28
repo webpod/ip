@@ -7,6 +7,7 @@
   "exports": {
     ".": {
       "types": "./target/dts/index.d.ts",
+      "browser": "./target/esm/core.mjs",
       "require": "./target/cjs/index.cjs",
       "import": "./target/esm/index.mjs",
       "default": "./target/esm/index.mjs"
@@ -39,6 +40,8 @@
     "build:stamp": "npx buildstamp",
     "build:jsr": "node ./src/scripts/build-jsr.mjs",
     "build:pkgjson": "node ./src/scripts/build-pkgjson.ts",
+    "_build:bench": "node ./src/scripts/build-bench-md.ts",
+    "_build:coh": "node ./src/scripts/build-coherence-md.ts",
     "test": "concurrently 'npm:test:*'",
     "test:target": "git diff --exit-code --quiet || (echo 'Uncommitted changes' && exit 1)",
     "test:size": "size-limit",

@@ -5,7 +5,8 @@ import { tools, type Checker } from '../test/bench/stand/index.ts'
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname)
 const outfile = path.resolve(__dirname, '../../COHERENCE.md')
-const suites: {title: string, method: string, cases: [string, boolean, string][]}[] = [
+
+export const suites: {title: string, method: string, cases: [string, boolean, string][]}[] = [
   {
     title: 'IPv4',
     method: 'isIPv4',
@@ -131,7 +132,8 @@ let output = `# Coherence across libraries
 `
 
 for (const {title, method, cases} of suites) {
-  const apis = Object.entries(tools).filter(([_, methods]) => method in methods)
+  const apis = Object.entries(tools)
+    .filter(([, methods]) => method in methods)
   const thead = ['Address', ...apis.map(([name, {ref}]) => ref ? `[\`${name}\`](${ref})`: name), 'Comment']
   output += `## ${title}
 ${thead.join(' | ')}

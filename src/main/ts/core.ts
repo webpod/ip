@@ -8,6 +8,7 @@ const IPV4_LB = '127.0.0.1'
 const IPV6_LB = 'fe80::1'
 const IPV6_MAX = (1n << 128n) - 1n
 const IPV4_MAX = 0xffffffffn
+const IPV4_RE = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/
 
 const OCT_RE = /^0[0-7]+$/
 const HEX_RE = /^[0-9a-fA-F]+$/
@@ -557,7 +558,7 @@ export function fromLong(n: number | bigint | `${bigint}`): string {
 }
 
 export const isV4Format: Checker = (addr: string): boolean=> {
-  return isIPv4Candidate(addr) && Address.normalizeToLong(addr, true) !== -1
+  return addr.length <= IPV4_LEN_LIM && IPV4_RE.test(addr)
 }
 
 export const isV6Format: Checker = (addr: string): boolean => {
