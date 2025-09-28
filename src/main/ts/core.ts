@@ -572,7 +572,7 @@ export const isV6Format: Checker = (addr: string): boolean => {
 
 export const isIPv4: Checker = isV4Format
 export const isIPv6: Checker = isV6Format
-export const isIP: Checker = (addr: string): boolean => isV4Format(addr) || isV6Format(addr)
+export const isIP = (addr: string): 0 | Family => isV4Format(addr) ? 4 : isV6Format(addr) ? 6 : 0
 
 export function isLoopback(addr: Raw): boolean {
   return Address.isSpecial(addr, ['loopback', 'unspecified', 'linklocal'])

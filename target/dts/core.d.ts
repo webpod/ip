@@ -71,6 +71,6 @@ export declare const isV4Format: Checker;
 export declare const isV6Format: Checker;
 export declare const isIPv4: Checker;
 export declare const isIPv6: Checker;
-export declare const isIP: Checker;
+export declare const isIP: (addr: string) => 0 | Family;
 export declare function isLoopback(addr: Raw): boolean;
 export declare function loopback(family?: string | number): string;

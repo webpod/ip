@@ -9,7 +9,16 @@
       "LICENSE",
       "package-main.json"
     ],
-    "limit": "57.25 kB",
+    "limit": "60.00 kB",
+    "brotli": false,
+    "gzip": false
+  },
+  {
+    "name": "@webpod/ip/core",
+    "path": [
+      "target/*/core.*"
+    ],
+    "limit": "41 kB",
     "brotli": false,
     "gzip": false
   },
@@ -23,7 +32,7 @@
       "LICENSE",
       "package-main.json"
     ],
-    "limit": "17.35 kB",
+    "limit": "18.10 kB",
     "gzip": true
   },
   {
@@ -31,7 +40,7 @@
     "path": [
       "target/cjs"
     ],
-    "limit": "23.95 kB",
+    "limit": "25.30 kB",
     "brotli": false,
     "gzip": false
   },
@@ -40,14 +49,14 @@
     "path": [
       "target/esm"
     ],
-    "limit": "20.06 kB",
+    "limit": "20.95 kB",
     "brotli": false,
     "gzip": false
   },
   {
     "name": "libdefs",
     "path": "target/dts",
-    "limit": "6.50 kB",
+    "limit": "7.00 kB",
     "brotli": false,
     "gzip": false
   }

@@ -505,7 +505,7 @@ var isV6Format = (addr) => {
 };
 var isIPv4 = isV4Format;
 var isIPv6 = isV6Format;
-var isIP = (addr) => isV4Format(addr) || isV6Format(addr);
+var isIP = (addr) => isV4Format(addr) ? 4 : isV6Format(addr) ? 6 : 0;
 function isLoopback(addr) {
   return Address.isSpecial(addr, ["loopback", "unspecified", "linklocal"]);
 }
