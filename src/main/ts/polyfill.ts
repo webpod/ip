@@ -10,7 +10,7 @@ export interface BufferLike extends Omit<Uint8Array, 'slice'> {
 export const FakeBuffer = {
   alloc: (size: number, fill: number = 0): BufferLike => {
     if (size < 0)
-      throw new RangeError('The value of \"size\" is out of range.')
+      throw new RangeError('The value of "size" is out of range.')
 
     const arr = new Uint8Array(size)
     if (fill !== 0)

@@ -35,7 +35,8 @@ var addresses = (kind, family = 4) => {
     const nic = interfaces[kind];
     if (!nic) return [];
     const match = nic.find((details) => normalizeFamily(details.family) === fam);
-    return [match == null ? void 0 : match.address];
+    if (!match) return [];
+    return [match.address];
   }
   const all = Object.values(interfaces).reduce((acc, nic) => {
     for (const { family: family2, address: address2 } of nic != null ? nic : []) {
