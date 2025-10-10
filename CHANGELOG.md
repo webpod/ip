@@ -1,3 +1,8 @@
+## [0.6.1](https://github.com/webpod/ip/compare/v0.6.0...v0.6.1) (2025-10-10)
+
+### Fixes & improvements
+* perf: rm debug points ([c4531ae](https://github.com/webpod/ip/commit/c4531ae2e469d68047ba9132e64e1f9845105db7))
+
 ## [0.6.0](https://github.com/webpod/ip/compare/v0.5.2...v0.6.0) (2025-10-10)
 
 ### Features
