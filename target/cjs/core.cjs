@@ -344,7 +344,7 @@ var _Address = class _Address {
     const al = addr.length;
     const sep = addr.indexOf("::");
     if (al > IPV6_LEN_LIM || sep !== -1 && addr.indexOf("::", sep + 1) !== -1)
-      throw new Error(`Invalid address0: ${addr}`);
+      throw new Error(`Invalid address: ${addr}`);
     const groups = [];
     let p = 0, gc = -1;
     while (true) {
@@ -372,7 +372,7 @@ var _Address = class _Address {
       p = i + 1;
     }
     const offset = 8 - groups.length;
-    if (gc === -1 ? offset !== 0 : offset < 1) throw new Error(`Invalid address4: ${addr}`);
+    if (gc === -1 ? offset !== 0 : offset < 1) throw new Error(`Invalid address: ${addr}`);
     let big = /* @__PURE__ */ BigInt("0");
     for (let i = 0; i < 8; i++) {
       const idx = i < gc ? i : i < gc + offset ? -1 : i - offset;

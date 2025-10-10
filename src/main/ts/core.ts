@@ -347,7 +347,7 @@ export class Address {
       al > IPV6_LEN_LIM ||
       sep !== -1 && addr.indexOf('::', sep + 1) !== -1 // only one '::' allowed
     )
-      throw new Error(`Invalid address0: ${addr}`)
+      throw new Error(`Invalid address: ${addr}`)
 
     const groups: number[] = []
     let p = 0, gc = -1
@@ -385,7 +385,7 @@ export class Address {
       p = i + 1
     }
     const offset = 8 - groups.length
-    if (gc === -1 ? offset !== 0 : offset < 1) throw new Error(`Invalid address4: ${addr}`)
+    if (gc === -1 ? offset !== 0 : offset < 1) throw new Error(`Invalid address: ${addr}`)
 
     let big = 0n
     for (let i = 0; i < 8; i++) {
