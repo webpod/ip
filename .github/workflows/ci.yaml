@@ -110,9 +110,10 @@ jobs:
         env:
           GIT_COMMITTER_NAME: ${{ vars.GIT_COMMITTER_NAME }}
           GIT_COMMITTER_EMAIL: ${{ vars.GIT_COMMITTER_EMAIL }}
+          DEBUG: true
         run: |
           npx ggcp target/coverage/lcov.info target/coverage/${{ github.sha }}.lcov.info
-          npx ggcp --base-from target/coverage "*.info" https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git/coverage --message='chore: add coverage for ${{ github.sha }}'
+          npx ggcp --base-from="target/coverage" "*.info" https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git/coverage --message='chore: add coverage for ${{ github.sha }}'
           npx ggcp target/docs https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git/gh-pages --message='chore: update docs'
 
   smoke-node:
