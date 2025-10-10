@@ -500,7 +500,7 @@ var isV6Format = (addr) => {
   if (!`${addr}`.includes(":")) return false;
   try {
     return Address.from(addr).family === 6;
-  } catch (e) {
+  } catch {
     return false;
   }
 };

@@ -567,7 +567,7 @@ export const isV6Format: Checker = (addr: string): boolean => {
 
   try {
     return Address.from(addr).family === 6
-  } catch (e) {
+  } catch {
     return false
   }
 }

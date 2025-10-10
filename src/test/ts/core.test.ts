@@ -269,7 +269,7 @@ describe('extra', () => {
 
           // buffer inputs
           [Buffer.from([0, 0, 0, 1]), {big: 1n, family: 4}],
-          [Buffer.from(new Array(16).fill(0)), {big: 0n, family: 6}],
+          [Buffer.from(Array(16).fill(0)), {big: 0n, family: 6}],
           [Buffer.alloc(5), /Invalid buffer length/],
 
           // Array inputs
