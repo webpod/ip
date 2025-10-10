@@ -26,7 +26,8 @@ export const addresses = (kind?: string, family: FamilyAlias = 4): string[] => {
     const nic = interfaces[kind]
     if (!nic) return []
     const match = nic.find(details => normalizeFamily(details.family) === fam)
-    return [match?.address!]
+    if (!match) return []
+    return [match.address]
   }
 
   // scan all NICs

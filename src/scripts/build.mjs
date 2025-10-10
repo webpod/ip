@@ -6,7 +6,6 @@ import { nodeExternalsPlugin } from 'esbuild-node-externals'
 import { entryChunksPlugin } from 'esbuild-plugin-entry-chunks'
 import { transformHookPlugin } from 'esbuild-plugin-transform-hook'
 import { extractHelpersPlugin } from 'esbuild-plugin-extract-helpers'
-import { injectFile } from 'esbuild-plugin-utils'
 import minimist from 'minimist'
 import glob from 'fast-glob'
 import path from "node:path";
@@ -59,7 +58,7 @@ const cjsPlugins = [
       {
         on: 'end',
         pattern: entryPointsToRegexp(entryPoints),
-        transform(contents, p) {
+        transform(contents) {
           return contents
             .toString()
             .replaceAll('"node:', '"')
