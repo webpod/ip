@@ -31,6 +31,19 @@ Temporary workaround to avoid refactoring is using `overrides` / `resolutions` i
 
 Browser-compatible core build is available as `@webpod/ip/core`: it omits `node:os` dependency and polyfills the `Buffer` API.
 
+### Strict mode
+By default, the library is in the `strict` mode that rejects non-canonical embedded IPv4 in IPv6. Switch to legacy flow if needed:
+
+```ts
+import { Address } from '@webpod/ip'
+
+Address.from('::ffff:5.6.7.8')    // ok
+Address.from('1:2:3:4::5.6.7.8')  // throws
+
+Address.strict = false
+Address.from('1:2:3:4::5.6.7.8')  // now it's fine
+```
+
 ## Usage
 The API is fully compatible with the latest `ip@2.0.1` but enforces stricter validations. See [coherence.md](./COHERENCE.md) for details.
 

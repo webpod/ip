@@ -157,6 +157,8 @@ export class Address {
     return o
   }
 
+  static strict = true
+
   static from(raw: Raw): Address {
     if (raw instanceof Address) return this.create(raw.big, raw.family, raw.raw)
     if (typeof raw === 'string') return this.fromString(raw.toLowerCase())
@@ -334,18 +336,18 @@ export class Address {
     if (addr === '0') return this.create(0n, 4, addr)
 
     return addr.includes(':')
-      ? this.fromIPv6(addr)
+      ? this.fromIPv6(addr, this.strict)
       : this.fromIPv4(addr)
   }
 
-  private static fromIPv6(addr: string): Address {
+  private static fromIPv6(addr: string, strict?: boolean): Address {
     const al = addr.length
     const sep = addr.indexOf('::')
     if (
       al > IPV6_LEN_LIM ||
       sep !== -1 && addr.indexOf('::', sep + 1) !== -1 // only one '::' allowed
     )
-      throw new Error(`Invalid address: ${addr}`)
+      throw new Error(`Invalid address0: ${addr}`)
 
     const groups: number[] = []
     let p = 0, gc = -1
@@ -360,15 +362,16 @@ export class Address {
         if (sep === -1 || (end !== sep && end !== sep + 1 + +last))
           throw new Error(`Invalid address: ${addr}`)
         gc = groups.length
-      } else if (last && v.includes('.')) {
-        // embedded IPv4
-        if (
-          groups.length > 6 ||
+      } else if (last && v.includes('.')) { // embedded IPv4
+        if (gc === -1 ? groups.length !== 6 : groups.length > 5)
+          throw new Error(`Invalid address: ${addr}`)
+
+        if (strict && (
           gc === groups.length ||
-          (gc === -1 && groups.length !== 6) ||
           groups[groups.length - 1] !== 0xffff ||
           groups.slice(0, -1).some(x => x !== 0)
-        ) throw new Error(`Invalid address: ${addr}`)
+        ))
+          throw new Error(`Invalid address: ${addr}`)
 
         const long = Address.normalizeToLong(v, true)
         if (long === -1) throw new Error(`Invalid address: ${addr}`)
@@ -382,7 +385,7 @@ export class Address {
       p = i + 1
     }
     const offset = 8 - groups.length
-    if (gc === -1 ? offset !== 0 : offset < 1) throw new Error(`Invalid address: ${addr}`)
+    if (gc === -1 ? offset !== 0 : offset < 1) throw new Error(`Invalid address4: ${addr}`)
 
     let big = 0n
     for (let i = 0; i < 8; i++) {
