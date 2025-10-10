@@ -1,3 +1,8 @@
+## [0.6.0](https://github.com/webpod/ip/compare/v0.5.2...v0.6.0) (2025-10-10)
+
+### Features
+* feat: add `strict` mode switcher (#31) ([b12df5c](https://github.com/webpod/ip/commit/b12df5ca651b143a1cbf4a0bf9ff9f53e02a7cb6))
+
 ## [0.5.2](https://github.com/webpod/ip/compare/v0.5.1...v0.5.2) (2025-09-28)
 
 ### Fixes & improvements
