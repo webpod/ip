@@ -26,6 +26,7 @@ export declare class Address {
     toLong(): number;
     get range(): Special | undefined;
     private static create;
+    static strict: boolean;
     static from(raw: Raw): Address;
     static mask(addr: Raw, mask: Raw): string;
     static subnet(addr: Raw, smask: Raw): Subnet;

@@ -9,7 +9,7 @@
       "LICENSE",
       "package-main.json"
     ],
-    "limit": "60.40 kB",
+    "limit": "61.052 kB",
     "brotli": false,
     "gzip": false
   },
@@ -18,7 +18,7 @@
     "path": [
       "target/*/core.*"
     ],
-    "limit": "41.25 kB",
+    "limit": "41.55 kB",
     "brotli": false,
     "gzip": false
   },
@@ -32,7 +32,7 @@
       "LICENSE",
       "package-main.json"
     ],
-    "limit": "18.30 kB",
+    "limit": "18.55 kB",
     "gzip": true
   },
   {
@@ -40,7 +40,7 @@
     "path": [
       "target/cjs"
     ],
-    "limit": "25.40 kB",
+    "limit": "25.55 kB",
     "brotli": false,
     "gzip": false
   },
@@ -49,14 +49,14 @@
     "path": [
       "target/esm"
     ],
-    "limit": "21.00 kB",
+    "limit": "21.15 kB",
     "brotli": false,
     "gzip": false
   },
   {
     "name": "libdefs",
     "path": "target/dts",
-    "limit": "7.15 kB",
+    "limit": "7.16 kB",
     "brotli": false,
     "gzip": false
   }

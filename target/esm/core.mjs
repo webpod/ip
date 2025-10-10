@@ -303,13 +303,13 @@ var _Address = class _Address {
     if (!addr) throw new Error(`Invalid address: empty`);
     if (addr === "::") return this.create(/* @__PURE__ */ BigInt("0"), 6, addr);
     if (addr === "0") return this.create(/* @__PURE__ */ BigInt("0"), 4, addr);
-    return addr.includes(":") ? this.fromIPv6(addr) : this.fromIPv4(addr);
+    return addr.includes(":") ? this.fromIPv6(addr, this.strict) : this.fromIPv4(addr);
   }
-  static fromIPv6(addr) {
+  static fromIPv6(addr, strict) {
     const al = addr.length;
     const sep = addr.indexOf("::");
     if (al > IPV6_LEN_LIM || sep !== -1 && addr.indexOf("::", sep + 1) !== -1)
-      throw new Error(`Invalid address: ${addr}`);
+      throw new Error(`Invalid address0: ${addr}`);
     const groups = [];
     let p = 0, gc = -1;
     while (true) {
@@ -322,7 +322,10 @@ var _Address = class _Address {
           throw new Error(`Invalid address: ${addr}`);
         gc = groups.length;
       } else if (last && v.includes(".")) {
-        if (groups.length > 6 || gc === groups.length || gc === -1 && groups.length !== 6 || groups[groups.length - 1] !== 65535 || groups.slice(0, -1).some((x) => x !== 0)) throw new Error(`Invalid address: ${addr}`);
+        if (gc === -1 ? groups.length !== 6 : groups.length > 5)
+          throw new Error(`Invalid address: ${addr}`);
+        if (strict && (gc === groups.length || groups[groups.length - 1] !== 65535 || groups.slice(0, -1).some((x) => x !== 0)))
+          throw new Error(`Invalid address: ${addr}`);
         const long = _Address.normalizeToLong(v, true);
         if (long === -1) throw new Error(`Invalid address: ${addr}`);
         return this.create(/* @__PURE__ */ BigInt("0xffff") << /* @__PURE__ */ BigInt("32") | BigInt(long), 6, addr);
@@ -334,7 +337,7 @@ var _Address = class _Address {
       p = i + 1;
     }
     const offset = 8 - groups.length;
-    if (gc === -1 ? offset !== 0 : offset < 1) throw new Error(`Invalid address: ${addr}`);
+    if (gc === -1 ? offset !== 0 : offset < 1) throw new Error(`Invalid address4: ${addr}`);
     let big = /* @__PURE__ */ BigInt("0");
     for (let i = 0; i < 8; i++) {
       const idx = i < gc ? i : i < gc + offset ? -1 : i - offset;
@@ -405,6 +408,7 @@ var _Address = class _Address {
     return !this.isPrivate(addr);
   }
 };
+__publicField(_Address, "strict", true);
 __publicField(_Address, "fromPrefixLen", (prefixlen, family) => {
   if (typeof prefixlen === "string" && !isDec(prefixlen)) throw new Error(`Invalid prefix: ${prefixlen}`);
   const len = +prefixlen | 0;
