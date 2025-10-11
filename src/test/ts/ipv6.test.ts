@@ -1,14 +1,21 @@
 /**
- * This test cases was borrowed and slightly adapted from richb-intermapper/IPv6-Regex.
+ * These test cases were borrowed and slightly adapted from richb-intermapper/IPv6-Regex.
  * All credit goes to Rich Brown, Dartware, intermapper.com.
  *
- * Source references:
- *
+ * Provenance of the test cases: The original document at:
  * https://github.com/richb-intermapper/IPv6-Regex/blob/master/test-ipv6-regex.pl
+ * collected test cases from various sources around the internet.
  *
+ * THERE ARE DEFINITELY DUPLICATE TESTS. They don't matter if the test
+ * function works, they take a millisecond (or less) to check.
+ * 
+ * Please submit updated tests cases as an Issue to this repository.
+ * 
  * Original license:
  *
- * IPv6 Regex by Dartware, LLC is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported License To attribute this work, place a link to http://intermapper.com in the Credits or About... window of your software. We would love to have you send any changes to the code or regular expression back to us at support@intermapper.com.
+ * IPv6 Regex by Dartware, LLC is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported License
+ * To attribute this work, place a link to http://intermapper.com in the Credits or About... window of your software.
+ * We would love to have you send any changes to the code or regular expression back to us at support@intermapper.com.
  */
 
 import { test, describe, beforeAll, afterAll, expect } from 'vitest'
